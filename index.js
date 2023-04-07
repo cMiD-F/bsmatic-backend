@@ -12,7 +12,6 @@ app.use(bodyParser.urlencoded({extended: false}));
 
 
 app.use("/api/user", authRouter);
-
 app.use(notFound);
 app.request(errorHandler);
 
