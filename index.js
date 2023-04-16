@@ -6,15 +6,18 @@ const PORT = process.env.PORT || 4000;
 const authRouter = require("./routes/authRoute");
 const bodyParser = require("body-parser");
 const { notFound, errorHandler } = require("./middlewares/errorHandler");
-dbConnect();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
+const cookieParser = require("cookie-parser");
+ dbConnect();
 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 app.use("/api/user", authRouter);
+
 app.use(notFound);
-app.request(errorHandler);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
-    console.log(`Servidor está rodando na PORT ${PORT}`);
+  console.log(`Servidor está rodando na PORT ${PORT}`);
 });
