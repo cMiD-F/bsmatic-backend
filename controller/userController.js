@@ -4,6 +4,8 @@ const asyncHandler = require("express-async-handler");
 const validateMongoDbId = require("../utils/validadeMongodbid");
 const { generateRefreshToken } = require("../config/refreshtoken");
 const jwt = require("jsonwebtoken")
+const sendEmail = require("./emailController");
+const crypto = require("crypto");
 
 // Cria usuário
 const createUser = asyncHandler(async (req, res) => {
@@ -152,6 +154,7 @@ const deleteaUser = asyncHandler(async (req, res) => {
   }
 });
 
+// Bloqueia usuário
 const blockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongoDbId(id);
@@ -170,6 +173,8 @@ const blockUser = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
+
+//Desbloqueia usuário
 const unblockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongoDbId(id);
@@ -189,6 +194,7 @@ const unblockUser = asyncHandler(async (req, res) => {
   }
 });
 
+//Atualiza senha
 const updateSenha = asyncHandler(async(req, res) => {
   const {_id} = req.user;
   const {senha} = req.body;
@@ -203,6 +209,44 @@ const updateSenha = asyncHandler(async(req, res) => {
   }
 });
 
+//Esqueci token de senha
+const forgotSenhaToken = asyncHandler(async(req, res)=> {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) throw new Error("Usuário não encontrado com este e-mail");
+  try {
+    const token = await user.createPasswordResetToken();
+    await user.save();
+    const resetURL = `Olá, siga este link para redefinir sua senha. Este link é válido até 10 minutos a partir de agora. <a href='http://localhost:5000/api/user/reset-senha/${token}'>Click Here</>`;
+    const data = {
+      to: email,
+      text: "Ei usuário",
+      subject: "Link para trocar senha",
+      htm: resetURL,
+    };
+    sendEmail(data);
+    res.json(token);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const resetSenha = asyncHandler(async(req, res) => {
+  const {senha} = req.body;
+  const {token} = req.params;
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+  if (!user) throw new Error ("Token expirado, tente novamente mais tarde");
+  user.senha = senha;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+  res.json(user);
+});
+
 module.exports = {
   createUser,
   loginUserController,
@@ -215,4 +259,6 @@ module.exports = {
   handleRefreshToken,
   logout,
   updateSenha,
+  forgotSenhaToken,
+  resetSenha
 };
