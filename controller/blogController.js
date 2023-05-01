@@ -1,7 +1,7 @@
 const Blog = require("../models/blogModel");
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
-const validateMongoDbId = require("../utils/validadeMongodbId");
+const validadeMongodbid = require("../utils/validadeMongodbid");
 
 const createBlog = asyncHandler(async (req, res) => {
   try {
@@ -14,7 +14,7 @@ const createBlog = asyncHandler(async (req, res) => {
 
 const updateBlog = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validateMongoDbId(id);
+  validadeMongodbid(id);
   try {
     const updateBlog = await Blog.findByIdAndUpdate(id, req.body, {
       new: true,
@@ -27,7 +27,7 @@ const updateBlog = asyncHandler(async (req, res) => {
 
 const getBlog = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validateMongoDbId(id);
+  validadeMongodbid(id);
   try {
     const getBlog = await Blog.findById(id)
     .populate("likes")
@@ -57,7 +57,7 @@ const getAllBlogs = asyncHandler(async (req, res) => {
 
 const deleteBlog = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validateMongoDbId(id);
+  validadeMongodbid(id);
   try {
     const deletedBlog = await Blog.findByIdAndDelete(id);
     res.json(deletedBlog);
@@ -68,7 +68,7 @@ const deleteBlog = asyncHandler(async (req, res) => {
 
 const curtidaBlog = asyncHandler(async (req, res) => {
   const { blogId } = req.body;
-  validateMongoDbId(blogId);
+  validadeMongodbid(blogId);
   
   // Find the blog which you want to be liked
   const blog = await Blog.findById(blogId);
@@ -116,7 +116,7 @@ const curtidaBlog = asyncHandler(async (req, res) => {
 
 const ncurtidaBlog = asyncHandler(async (req, res) => {
   const { blogId } = req.body;
-  validateMongoDbId(blogId);
+  validadeMongodbid(blogId);
   // Find the blog which you want to be liked
   const blog = await Blog.findById(blogId);
   // find the login user

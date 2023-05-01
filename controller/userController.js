@@ -1,7 +1,7 @@
 const { generateToken } = require("../config/jwtToken");
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
-const validateMongoDbId = require("../utils/validadeMongodbid");
+const validadeMongodbid = require("../utils/validadeMongodbid");
 const { generateRefreshToken } = require("../config/refreshtoken");
 const jwt = require("jsonwebtoken")
 const sendEmail = require("./emailController");
@@ -96,7 +96,7 @@ const logout = asyncHandler(async (req, res) => {
 const updatedUser = asyncHandler(async (req, res) => {
   console.log();
   const { _id } = req.user;
-  validateMongoDbId(_id);
+  validadeMongodbid(_id);
   try {
     const updatedUser = await User.findByIdAndUpdate(
       _id,
@@ -129,7 +129,7 @@ const getallUsers = asyncHandler(async (req, res) => {
 // Obtendo um unico usuário
 const getaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validateMongoDbId(id);
+  validadeMongodbid(id);
   try {
     const getaUser = await User.findById(id);
     res.json({
@@ -143,7 +143,7 @@ const getaUser = asyncHandler(async (req, res) => {
 // Deletando usuário
 const deleteaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validateMongoDbId(id);
+  validadeMongodbid(id);
   try {
     const deleteaUser = await User.findByIdAndDelete(id);
     res.json({
@@ -157,7 +157,7 @@ const deleteaUser = asyncHandler(async (req, res) => {
 // Bloqueia usuário
 const blockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validateMongoDbId(id);
+  validadeMongodbid(id);
   try {
     const blockusr = await User.findByIdAndUpdate(
       id,
@@ -177,7 +177,7 @@ const blockUser = asyncHandler(async (req, res) => {
 //Desbloqueia usuário
 const unblockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validateMongoDbId(id);
+  validadeMongodbid(id);
   try {
     const unblock = await User.findByIdAndUpdate(
       id,
@@ -198,7 +198,7 @@ const unblockUser = asyncHandler(async (req, res) => {
 const updateSenha = asyncHandler(async(req, res) => {
   const {_id} = req.user;
   const {senha} = req.body;
-  validateMongoDbId(_id);
+  validadeMongodbid(_id);
   const user = await User.findById(_id);
   if(senha) {
     user.senha = senha;
