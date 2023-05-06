@@ -1,4 +1,5 @@
 const Produto = require("../models/produtoModel");
+const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
 const { Query } = require("mongoose");
 const slugify = require("slugify");
@@ -65,7 +66,7 @@ const getAllProduto = asyncHandler(async (req, res) => {
     console.log(queryObj);
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-    
+
     let query = Produto.find(JSON.parse(queryStr));
 
     // Ordenação
@@ -75,13 +76,13 @@ const getAllProduto = asyncHandler(async (req, res) => {
     } else {
       query = query.sort("-createdAt");
     }
-    
+
     // Limitando os campos
-    if(req.query.fields){
+    if (req.query.fields) {
       const fields = req.query.fields.split(",").join(" ");
       query = query.select(fields);
     } else {
-      query=query.select("-__v");
+      query = query.select("-__v");
     }
 
     // Paginação
@@ -89,15 +90,107 @@ const getAllProduto = asyncHandler(async (req, res) => {
     const limit = req.query.limit;
     const skip = (page - 1) * limit;
     query = query.skip(skip).limit(limit);
-    if (req.query.page)  {
+    if (req.query.page) {
       const produtoCount = await Product.countDocuments();
       if (skip >= produtoCount) throw new Error("Esta página não existe");
     }
     console.log(page, limit, skip);
 
-
     const produto = await query;
     res.json(produto);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+// Adiciona item a lista de desejos
+const addListadeDesejos = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  const { prodId } = req.body;
+  try {
+    const user = await User.findById(_id);
+    const alreadyadded = user.ListadeDesejos.find(
+      (id) => id.toString() === prodId
+    );
+    if (alreadyadded) {
+      let user = await User.findByIdAndUpdate(
+        _id,
+        {
+          $pull: { ListadeDesejos: prodId },
+        },
+        {
+          new: true,
+        }
+      );
+      res.json(user);
+    } else {
+      let user = await User.findByIdAndUpdate(
+        _id,
+        {
+          $push: { ListadeDesejos: prodId },
+        },
+        {
+          new: true,
+        }
+      );
+      res.json(user);
+    }
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const classificacao = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  const { star, prodId, comentario } = req.body;
+  try {
+    const produto = await Produto.findById(prodId);
+    let alreadyRated = produto.classificacao.find(
+      (userId) => userId.postedby.toString() === _id.toString()
+    );
+    if (alreadyRated) {
+      const updateClassificacao = await Produto.updateOne(
+        {
+          classificacao: { $elemMatch: alreadyRated },
+        },
+        {
+          $set: { "classificacao.$.star": star, "classificacao.$.comentario": comentario },
+        },
+        {
+          new: true,
+        }
+      );
+     
+    } else {
+      const rateProduto = await Produto.findByIdAndUpdate(
+        prodId,
+        {
+          $push: {
+            classificacao: {
+              star: star,
+              comentario: comentario,
+              postedby: _id,
+            },
+          },
+        },
+        { new: true }
+      );
+      
+    }
+    const getallclassificacao = await Produto.findById(prodId);
+    let totalclassificacao = getallclassificacao.classificacao.length;
+    let classificacaosum = getallclassificacao.classificacao
+      .map((item) => item.star)
+      .reduce((prev, curr) => prev + curr, 0);
+    let atualClassificacao = Math.round(classificacaosum / totalclassificacao);
+    let finalproduto = await Produto.findByIdAndUpdate(
+      prodId,
+      {
+        totalclassificacao: atualClassificacao,
+      },
+      { new: true }
+    );
+    res.json(finalproduto);
   } catch (error) {
     throw new Error(error);
   }
@@ -109,4 +202,6 @@ module.exports = {
   getAllProduto,
   updatedProduto,
   deletaProduto,
+  addListadeDesejos,
+  classificacao,
 };

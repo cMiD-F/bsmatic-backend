@@ -51,9 +51,14 @@ var produtoSchema = new mongoose.Schema(
     classificacao: [
       {
         star: Number,
+        comentario: String,
         postedby: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       },
     ],
+    totalclassificacao: {
+      type: String,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
