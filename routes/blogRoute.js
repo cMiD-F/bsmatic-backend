@@ -7,11 +7,22 @@ const {
   deleteBlog,
   curtidaBlog,
   ncurtidaBlog,
+  uploadImagens,
 } = require("../controller/blogController");
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
+const { uploadFoto, blogImgResize } = require("../middlewares/uploadImagens");
 const router = express.Router();
 
 router.post("/", authMiddleware, isAdmin, createBlog);
+router.put(
+  "/upload/:id",
+  authMiddleware,
+  isAdmin,
+  uploadFoto.array("imagens", 2),
+  blogImgResize,
+  uploadImagens
+);
+
 
 router.put("/curtidas", authMiddleware, curtidaBlog);
 router.put("/ncurtidas", authMiddleware, ncurtidaBlog);

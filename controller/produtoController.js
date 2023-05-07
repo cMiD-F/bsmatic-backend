@@ -3,6 +3,9 @@ const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
 const { Query } = require("mongoose");
 const slugify = require("slugify");
+const validadeMongodbid = require("../utils/validadeMongodbid");
+const cloudinaryUploadImg = require("../utils/cloudinary");
+const fs = require("fs");
 
 // Cria um produto
 const createProduto = asyncHandler(async (req, res) => {
@@ -154,13 +157,15 @@ const classificacao = asyncHandler(async (req, res) => {
           classificacao: { $elemMatch: alreadyRated },
         },
         {
-          $set: { "classificacao.$.star": star, "classificacao.$.comentario": comentario },
+          $set: {
+            "classificacao.$.star": star,
+            "classificacao.$.comentario": comentario,
+          },
         },
         {
           new: true,
         }
       );
-     
     } else {
       const rateProduto = await Produto.findByIdAndUpdate(
         prodId,
@@ -175,7 +180,6 @@ const classificacao = asyncHandler(async (req, res) => {
         },
         { new: true }
       );
-      
     }
     const getallclassificacao = await Produto.findById(prodId);
     let totalclassificacao = getallclassificacao.classificacao.length;
@@ -196,6 +200,38 @@ const classificacao = asyncHandler(async (req, res) => {
   }
 });
 
+const uploadImagens = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validadeMongodbid(id);
+  console.log(req.files);
+  try {
+    const uploader = (path) => cloudinaryUploadImg(path, "imagens");
+    const urls = [];
+    const files = req.files;
+    for (const file of files) {
+      const { path } = file;
+      const newpath = await uploader(path);
+      console.log(newpath);
+      urls.push(newpath);
+      fs.unlinkSync(path);
+    }
+    const findProduto = await Produto.findByIdAndUpdate(
+      id,
+      {
+        imagens: urls.map((file) => {
+          return file;
+        }),
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(findProduto);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
 module.exports = {
   createProduto,
   getaProduto,
@@ -204,4 +240,5 @@ module.exports = {
   deletaProduto,
   addListadeDesejos,
   classificacao,
+  uploadImagens,
 };

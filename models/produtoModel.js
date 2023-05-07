@@ -48,6 +48,7 @@ var produtoSchema = new mongoose.Schema(
     garantia: {
       type: Number,
     },
+    imagens: [],
     classificacao: [
       {
         star: Number,

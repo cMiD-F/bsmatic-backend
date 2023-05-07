@@ -2,6 +2,8 @@ const Blog = require("../models/blogModel");
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
 const validadeMongodbid = require("../utils/validadeMongodbid");
+const cloudinaryUploadImg = require("../utils/cloudinary");
+const fs = require("fs");
 
 const createBlog = asyncHandler(async (req, res) => {
   try {
@@ -161,4 +163,35 @@ const ncurtidaBlog = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { createBlog, updateBlog, getBlog, getAllBlogs, deleteBlog, curtidaBlog, ncurtidaBlog };
+const uploadImagens = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validadeMongodbid(id);
+  try {
+    const uploader = (path) => cloudinaryUploadImg(path, "imagens");
+    const urls = [];
+    const files = req.files;
+    for (const file of files) {
+      const { path } = file;
+      const newpath = await uploader(path);
+      console.log(newpath);
+      urls.push(newpath);
+      fs.unlinkSync(path);
+    }
+    const findBlog = await Blog.findByIdAndUpdate(
+      id,
+      {
+        imagens: urls.map((file) => {
+          return file;
+        }),
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(findBlog);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+module.exports = { createBlog, updateBlog, getBlog, getAllBlogs, deleteBlog, curtidaBlog, ncurtidaBlog, uploadImagens };
