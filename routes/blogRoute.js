@@ -9,6 +9,7 @@ const {
   ncurtidaBlog,
   uploadImagens,
 } = require("../controller/blogController");
+
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const { uploadFoto, blogImgResize } = require("../middlewares/uploadImagens");
 const router = express.Router();

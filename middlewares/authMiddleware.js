@@ -1,4 +1,4 @@
-const User = require("..//models/userModel");
+const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 
@@ -25,7 +25,7 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
 const isAdmin = asyncHandler(async(req, res, next) =>{
     const {email} = req.user;
     const adminUser = await User.findOne({email});
-    if(adminUser.role!== "admin"){
+    if(adminUser.role!== "Admin"){
         throw new Error("Você não é um administrador");
     } else {
         next();

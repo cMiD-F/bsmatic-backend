@@ -1,7 +1,6 @@
 const Produto = require("../models/produtoModel");
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
-const { Query } = require("mongoose");
 const slugify = require("slugify");
 const validadeMongodbid = require("../utils/validadeMongodbid");
 const cloudinaryUploadImg = require("../utils/cloudinary");
@@ -23,7 +22,7 @@ const createProduto = asyncHandler(async (req, res) => {
 // Atualiza o produto
 const updatedProduto = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  console.log(id);
+  validadeMongodbid(id);
   try {
     if (req.body.item) {
       req.body.slug = slugify(req.body.item);
@@ -40,6 +39,7 @@ const updatedProduto = asyncHandler(async (req, res) => {
 // Deleta um produto
 const deletaProduto = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  validadeMongodbid(id);
   try {
     const deleteProduto = await Produto.findByIdAndDelete(id);
     res.json(deleteProduto);
@@ -51,6 +51,7 @@ const deletaProduto = asyncHandler(async (req, res) => {
 //Obtem um produto
 const getaProduto = asyncHandler(async (req, res) => {
   const { id } = req.params;
+  validadeMongodbid(id);
   try {
     const findProduto = await Produto.findById(id);
     res.json(findProduto);
@@ -211,8 +212,8 @@ const uploadImagens = asyncHandler(async (req, res) => {
     for (const file of files) {
       const { path } = file;
       const newpath = await uploader(path);
-      console.log(newpath);
       urls.push(newpath);
+      console.log(file);
       fs.unlinkSync(path);
     }
     const findProduto = await Produto.findByIdAndUpdate(

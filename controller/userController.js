@@ -3,7 +3,7 @@ const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
 const validadeMongodbid = require("../utils/validadeMongodbid");
 const { generateRefreshToken } = require("../config/refreshtoken");
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 const sendEmail = require("./emailController");
 const crypto = require("crypto");
 
@@ -52,14 +52,51 @@ const loginUserController = asyncHandler(async (req, res) => {
   }
 });
 
+// Login do admin
+const loginAdmin = asyncHandler(async (req, res) => {
+  const { email, senha } = req.body;
+  // Verifica se o usuário existe ou não
+  const findAdmin = await User.findOne({ email });
+  if (findAdmin.role !== "Admin") throw new Error("Não autorizado");
+  if (findAdmin && (await findAdmin.isPasswordMatched(senha))) {
+    const refreshToken = await generateRefreshToken(findAdmin?._id);
+    const updateuser = await User.findByIdAndUpdate(
+      findAdmin.id,
+      {
+        refreshToken: refreshToken,
+      },
+      { new: true }
+    );
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      maxAge: 72 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      _id: findAdmin?._id,
+      primeiroNome: findAdmin?.primeiroNome,
+      ultimoNome: findAdmin?.ultimoNome,
+      email: findAdmin.email,
+      telefone: findAdmin?.telefone,
+      token: generateToken(findAdmin?._id),
+    });
+  } else {
+    throw new Error("Credenciais inválidas");
+  }
+});
+
 // Handle refresh token
 const handleRefreshToken = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
-  if (!cookie?.refreshToken) throw new Error("Nenhum token de atualização em cookies");
+  if (!cookie?.refreshToken)
+    throw new Error("Nenhum token de atualização em cookies");
   const refreshToken = cookie.refreshToken;
   console.log(refreshToken);
   const user = await User.findOne({ refreshToken });
-  if (!user) throw new Error("Nenhum token de atualização presente no banco de dados ou não correspondido");
+  if (!user)
+    throw new Error(
+      "Nenhum token de atualização presente no banco de dados ou não correspondido"
+    );
   jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
     if (err || user.id !== decoded.id) {
       throw new Error("Há algo errado com o token de atualização");
@@ -195,22 +232,22 @@ const unblockUser = asyncHandler(async (req, res) => {
 });
 
 //Atualiza senha
-const updateSenha = asyncHandler(async(req, res) => {
-  const {_id} = req.user;
-  const {senha} = req.body;
+const updateSenha = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  const { senha } = req.body;
   validadeMongodbid(_id);
   const user = await User.findById(_id);
-  if(senha) {
+  if (senha) {
     user.senha = senha;
     const updatedSenha = await user.save();
     res.json(updatedSenha);
   } else {
-    res.json(user)
+    res.json(user);
   }
 });
 
 //Esqueci token de senha
-const forgotSenhaToken = asyncHandler(async(req, res)=> {
+const forgotSenhaToken = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
   if (!user) throw new Error("Usuário não encontrado com este e-mail");
@@ -231,20 +268,30 @@ const forgotSenhaToken = asyncHandler(async(req, res)=> {
   }
 });
 
-const resetSenha = asyncHandler(async(req, res) => {
-  const {senha} = req.body;
-  const {token} = req.params;
+const resetSenha = asyncHandler(async (req, res) => {
+  const { senha } = req.body;
+  const { token } = req.params;
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
   const user = await User.findOne({
     passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
   });
-  if (!user) throw new Error ("Token expirado, tente novamente mais tarde");
+  if (!user) throw new Error("Token expirado, tente novamente mais tarde");
   user.senha = senha;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
   await user.save();
   res.json(user);
+});
+
+const getListaDesejo = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  try {
+    const findUser = await User.findById(_id).populate("ListadeDesejos");
+    res.json(findUser);
+  } catch (error) {
+    throw new Error(error);
+  }
 });
 
 module.exports = {
@@ -260,5 +307,7 @@ module.exports = {
   logout,
   updateSenha,
   forgotSenhaToken,
-  resetSenha
+  resetSenha,
+  loginAdmin,
+  getListaDesejo,
 };

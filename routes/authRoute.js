@@ -13,6 +13,8 @@ const {
   updateSenha,
   forgotSenhaToken,
   resetSenha,
+  loginAdmin,
+  getListaDesejo,
 } = require("../controller/userController");
 
 const { authMiddleware, isAdmin } = require("..//middlewares/authMiddleware");
@@ -24,12 +26,15 @@ router.put("/reset-senha/:token", resetSenha);
 
 router.put("/senha", authMiddleware, updateSenha);
 router.post("/login", loginUserController);
+router.post("/login-admin", loginAdmin);
 router.get("/todos-usuarios", getallUsers);
 router.get ("/refresh", handleRefreshToken);
 router.get("/logout", logout);
+router.get("/listaDesejo", authMiddleware, getListaDesejo);
 
 
 router.get("/:id", authMiddleware, isAdmin, getaUser);
+
 router.delete("/:id", deleteaUser);
 router.put("/edit-user", authMiddleware, updatedUser);
 router.put("/block-user/:id", authMiddleware,isAdmin, blockUser);
