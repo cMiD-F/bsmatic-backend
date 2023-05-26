@@ -22,10 +22,6 @@ var produtoSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    aplicacao: {
-      type: String,
-      required: true,
-    },
     itensInclusos: {
       type: String,
     },
@@ -49,7 +45,10 @@ var produtoSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    imagens: [],    
+    imagens: [],
+    aplicacao: [],
+    tags: [],
+
     classificacao: [
       {
         star: Number,
