@@ -23,6 +23,8 @@ const {
   criarPedido,
   getPedidos,
   updateStatusPedidos,
+  getTodosPedidos,
+  getPedidoByUserId,
 } = require("../controller/userController");
 
 const { authMiddleware, isAdmin } = require("..//middlewares/authMiddleware");
@@ -40,7 +42,9 @@ router.post("/carrinho/aplicacupom", authMiddleware, aplicaCupom);
 router.post("/carrinho/ordem-pagamento", authMiddleware, criarPedido);
 router.post("/login-admin", loginAdmin);
 router.get("/todos-usuarios", getallUsers);
-router.get("/obtem-pedidos", authMiddleware, getPedidos);
+router.get("/obtem-pedido", authMiddleware, getPedidos);
+router.get("/obtem-todos-pedidos", authMiddleware, isAdmin, getTodosPedidos)
+router.post("/obtempedidoporusuario/:id", authMiddleware, isAdmin, getPedidoByUserId);
 router.get("/refresh", handleRefreshToken);
 router.get("/logout", logout);
 router.get("/listaDesejo", authMiddleware, getListaDesejo);
