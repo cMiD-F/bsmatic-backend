@@ -2,6 +2,8 @@ const User = require("../models/userModel");
 const Produto = require("../models/produtoModel");
 const Carrinho = require("../models/carrinhoModel");
 const Cupom = require("../models/cupomModel");
+const Pedido = require("../models/pedidosModel");
+const uniqid = require("uniqid");
 
 const asyncHandler = require("express-async-handler");
 const { generateToken } = require("../config/jwtToken");
@@ -405,16 +407,96 @@ const aplicaCupom = asyncHandler(async (req, res) => {
   let { carrinhoTotal } = await Carrinho.findOne({
     orderby: user._id,
   }).populate("produtos.produto");
-  let totalAposDisconto = (
+  let totalDpsDesconto = (
     carrinhoTotal -
     (carrinhoTotal * validCupom.desconto) / 100
   ).toFixed(2);
   await Carrinho.findOneAndUpdate(
     { orderby: user._id },
-    { totalAposDisconto },
+    { totalDpsDesconto },
     { new: true }
   );
-  res.json(totalAposDisconto);
+  res.json(totalDpsDesconto);
+});
+
+const criarPedido = asyncHandler(async (req, res) => {
+  const { COD, cupomAplicado } = req.body;
+  const { _id } = req.user;
+  validadeMongodbid(_id);
+
+  try {
+    if (!COD) throw new Error("Falha ao criar ordem de pagamento");
+    const user = await User.findById(_id);
+    let userCarrinho = await Carrinho.findOne({ orderby: user._id });
+    let quantidadeFinal = 0;
+    if (cupomAplicado && userCarrinho.totalDpsDesconto) {
+      quantidadeFinal = userCarrinho.totalDpsDesconto;
+    } else {
+      quantidadeFinal = userCarrinho.carrinhoTotal;
+    }
+
+    let novoPedido = await new Pedido({
+      produtos: userCarrinho.produtos,
+      acompPagemento: {
+        id: uniqid(),
+        metodo: "COD",
+        valor: quantidadeFinal,
+        status: "Pagamento Confirmado",
+        criado: Date.now(),
+        moeda: "brl",
+      },
+      orderby: user._id,
+      pedidoStatus: "Pagamento Confirmado",
+    }).save();
+    let update = userCarrinho.produtos.map((item) => {
+      return {
+        updateOne: {
+          filter: { _id: item.produto._id },
+          update: {
+            $inc: { quantidade: -item.contagem, sold: +item.contagem },
+          },
+        },
+      };
+    });
+    const updated = await Produto.bulkWrite(update, {});
+    res.json({ message: "sucesso" });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getPedidos = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validadeMongodbid(_id);
+  try {
+    const userpedidos = await Pedido.findOne({ orderby: _id })
+      .populate("produtos.produto")
+      .exec();
+    res.json(userpedidos);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const updateStatusPedidos = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const { id } = req.params;
+  validadeMongodbid(id);
+  try {
+    const atualizaStatusPedido = await Pedido.findByIdAndUpdate(
+      id,
+      {
+        pedidoStatus: status,
+        acompPagemento: {
+          status: status,
+        },
+      },
+      { new: true }
+    );
+    res.json(atualizaStatusPedido);
+  } catch (error) {
+    throw new Error(error);
+  }
 });
 
 module.exports = {
@@ -438,4 +520,7 @@ module.exports = {
   getUserCarrinho,
   emptyCarrinho,
   aplicaCupom,
+  criarPedido,
+  getPedidos,
+  updateStatusPedidos,
 };

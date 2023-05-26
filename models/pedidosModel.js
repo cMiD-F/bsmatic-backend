@@ -27,7 +27,7 @@ var pedidosSchema = new mongoose.Schema(
       ],
     },
     orderby: {
-      type: moongose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
   },
