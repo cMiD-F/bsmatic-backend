@@ -1,6 +1,10 @@
-const { generateToken } = require("../config/jwtToken");
 const User = require("../models/userModel");
+const Produto = require("../models/produtoModel");
+const Carrinho = require("../models/carrinhoModel");
+const Cupom = require("../models/cupomModel");
+
 const asyncHandler = require("express-async-handler");
+const { generateToken } = require("../config/jwtToken");
 const validadeMongodbid = require("../utils/validadeMongodbid");
 const { generateRefreshToken } = require("../config/refreshtoken");
 const jwt = require("jsonwebtoken");
@@ -9,10 +13,19 @@ const crypto = require("crypto");
 
 // Cria usuário
 const createUser = asyncHandler(async (req, res) => {
+  /**
+   * Todo: Obtenha o e-mail de req.body
+   **/
   const email = req.body.email;
+  /**
+   * Com a ajuda do e-mail, descubra se o usuário existe ou não
+   **/
   const findUser = await User.findOne({ email: email });
+
   if (!findUser) {
-    // Cria um novo usuário
+    /**
+     * Se o usuário não for encontrado, crie um novo usuário
+     **/
     const newUser = await User.create(req.body);
     res.json(newUser);
   } else {
@@ -142,6 +155,27 @@ const updatedUser = asyncHandler(async (req, res) => {
         ultimoNome: req?.body?.ultimoNome,
         email: req?.body?.email,
         telefone: req?.body?.telefone,
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(updatedUser);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+// Salva o endereço dos usuários
+const salvaEndereco = asyncHandler(async (req, res, next) => {
+  const { _id } = req.user;
+  validadeMongodbid(_id);
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      _id,
+      {
+        endereco: req?.body?.endereco,
       },
       {
         new: true,
@@ -294,6 +328,95 @@ const getListaDesejo = asyncHandler(async (req, res) => {
   }
 });
 
+const userCarrinho = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  const { carrinho } = req.body;
+
+  validadeMongodbid(_id);
+  try {
+    let produtos = [];
+    const user = await User.findById(_id);
+    // Verifica se o usuário já tem produto no carrinho
+    const existeCarrinho = await Carrinho.findOne({ orderby: user._id });
+    if (existeCarrinho) {
+      existeCarrinho.remove();
+    }
+    for (let i = 0; i < carrinho.length; i++) {
+      let objeto = {};
+      objeto.produto = carrinho[i]._id;
+      objeto.contagem = carrinho[i].contagem;
+      objeto.codigoTransmissao = carrinho[i].codigoTransmissao;
+      let getValorBS = await Produto.findById(carrinho[i]._id)
+        .select("valorBS")
+        .exec();
+      objeto.valorBS = getValorBS.valorBS;
+      produtos.push(objeto);
+    }
+    let carrinhoTotal = 0;
+    for (let i = 0; i < produtos.length; i++) {
+      carrinhoTotal =
+        carrinhoTotal + produtos[i].valorBS * produtos[i].contagem;
+    }
+    let newCarrinho = await new Carrinho({
+      produtos,
+      carrinhoTotal,
+      orderby: user?._id,
+    }).save();
+    res.json(newCarrinho);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getUserCarrinho = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validadeMongodbid(_id);
+  try {
+    const carrinho = await Carrinho.findOne({ orderby: _id }).populate(
+      "produtos.produto"
+    );
+    res.json(carrinho);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const emptyCarrinho = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validadeMongodbid(_id);
+  try {
+    const user = await User.findOne({ _id });
+    const cart = await Carrinho.findOneAndRemove({ orderby: user._id });
+    res.json(cart);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const aplicaCupom = asyncHandler(async (req, res) => {
+  const { cupom } = req.body;
+  const { _id } = req.user;
+  validadeMongodbid(_id);
+  const validCupom = await Cupom.findOne({ nome: cupom });
+  if (validCupom === null) {
+    throw new Error("Cupom Inválido");
+  }
+  const user = await User.findOne({ _id });
+  let { carrinhoTotal } = await Carrinho.findOne({
+    orderby: user._id,
+  }).populate("produtos.produto");
+  let totalAposDisconto = (
+    carrinhoTotal -
+    (carrinhoTotal * validCupom.desconto) / 100
+  ).toFixed(2);
+  await Carrinho.findOneAndUpdate(
+    { orderby: user._id },
+    { totalAposDisconto },
+    { new: true }
+  );
+  res.json(totalAposDisconto);
+});
+
 module.exports = {
   createUser,
   loginUserController,
@@ -310,4 +433,9 @@ module.exports = {
   resetSenha,
   loginAdmin,
   getListaDesejo,
+  salvaEndereco,
+  userCarrinho,
+  getUserCarrinho,
+  emptyCarrinho,
+  aplicaCupom,
 };

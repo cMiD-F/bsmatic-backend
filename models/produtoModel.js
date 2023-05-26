@@ -18,23 +18,19 @@ var produtoSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    transmissao: {
+    codigoTransmissao: {
       type: String,
       required: true,
     },
-    descricao: {
+    aplicacao: {
       type: String,
       required: true,
     },
     itensInclusos: {
       type: String,
     },
-    categoria: {
-      type: String,
-      required: true,
-    },
-    valorFornecedor: {
-      type: String,
+    valorBS: {
+      type: Number,
       required: true,
     },
     quantidade: {
@@ -46,9 +42,14 @@ var produtoSchema = new mongoose.Schema(
       default: 0,
     },
     garantia: {
-      type: Number,
+      type: String,
+      required: true,
     },
-    imagens: [],
+    categoria: {
+      type: String,
+      required: true,
+    },
+    imagens: [],    
     classificacao: [
       {
         star: Number,
