@@ -12,6 +12,7 @@ const categoriaRouter = require("./routes/prodcategoriaRoute");
 const blogCategoriaRouter = require("./routes/blogCatRoute");
 const marcaRouter = require("./routes/marcaRoute");
 const aplicacaoRouter = require("./routes/aplicacaoRoute");
+const pergRouter = require("./routes/pergRoute");
 const cupomRouter = require("./routes/cupomRoute");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
@@ -30,6 +31,8 @@ app.use("/api/blogcategoria", blogCategoriaRouter);
 app.use("/api/marca", marcaRouter);
 app.use("/api/cupom", cupomRouter);
 app.use("/api/aplicacao", aplicacaoRouter);
+app.use("/api/pergunta", pergRouter);
+
 
 
 
