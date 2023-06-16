@@ -15,9 +15,11 @@ const aplicacaoRouter = require("./routes/aplicacaoRoute");
 const pergRouter = require("./routes/pergRoute");
 const cupomRouter = require("./routes/cupomRoute");
 const cookieParser = require("cookie-parser");
+const cors = require("cors");
 const morgan = require("morgan");
 dbConnect();
 
+app.use(cors());
 app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
