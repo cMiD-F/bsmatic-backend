@@ -14,6 +14,7 @@ const marcaRouter = require("./routes/marcaRoute");
 const aplicacaoRouter = require("./routes/aplicacaoRoute");
 const pergRouter = require("./routes/pergRoute");
 const cupomRouter = require("./routes/cupomRoute");
+const uploadRouter = require("./routes/uploadRoute");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const morgan = require("morgan");
@@ -34,8 +35,7 @@ app.use("/api/marca", marcaRouter);
 app.use("/api/cupom", cupomRouter);
 app.use("/api/aplicacao", aplicacaoRouter);
 app.use("/api/pergunta", pergRouter);
-
-
+app.use("/api/upload", uploadRouter);
 
 
 app.use(notFound);
