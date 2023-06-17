@@ -484,21 +484,24 @@ const getTodosPedidos = asyncHandler(async (req, res) => {
       .populate("produtos.produto")
       .populate("orderby")
       .exec();
-      res.json(todosuserpedidos);
+    res.json(todosuserpedidos);
   } catch (error) {
     throw new Error(error);
   }
 });
 
-const getPedidoByUserId = asyncHandler(async(req, res)=> {
-const{id} = req.params;
-validadeMongodbid(id);
-try {
-  const userpedidos = await Pedido.findOne({orderby: id}).populate("produtos.produto").populate("orderby").exec();
-  res.json(userpedidos);
-} catch (error) {
-  throw new Error(error)
-}
+const getPedidoByUserId = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validadeMongodbid(id);
+  try {
+    const userpedidos = await Pedido.findOne({ orderby: id })
+      .populate("produtos.produto")
+      .populate("orderby")
+      .exec();
+    res.json(userpedidos);
+  } catch (error) {
+    throw new Error(error);
+  }
 });
 
 const updateStatusPedidos = asyncHandler(async (req, res) => {
