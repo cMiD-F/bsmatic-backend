@@ -45,9 +45,12 @@ var produtoSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    imagens: [],
+    imagens: [{
+      public_id: String,
+      url: String,
+    }],
     aplicacao: [],
-    tags: [],
+    tags: String,
 
     classificacao: [
       {
