@@ -24,7 +24,7 @@ const {
   getPedidos,
   updateStatusPedidos,
   getTodosPedidos,
-  getPedidoByUserId,
+  getOrderByUserId,
 } = require("../controller/userController");
 
 const { authMiddleware, isAdmin } = require("..//middlewares/authMiddleware");
@@ -44,7 +44,7 @@ router.post("/login-admin", loginAdmin);
 router.get("/todos-usuarios", getallUsers);
 router.get("/obtem-pedido", authMiddleware, getPedidos);
 router.get("/obtem-todos-pedidos", authMiddleware, isAdmin, getTodosPedidos)
-router.post("/obtempedidoporusuario/:id", authMiddleware, isAdmin, getPedidoByUserId);
+router.post("/obtempedidoporusuario/:id", authMiddleware, isAdmin, getOrderByUserId);
 router.get("/refresh", handleRefreshToken);
 router.get("/logout", logout);
 router.get("/listaDesejo", authMiddleware, getListaDesejo);

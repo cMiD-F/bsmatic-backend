@@ -490,7 +490,7 @@ const getTodosPedidos = asyncHandler(async (req, res) => {
   }
 });
 
-const getPedidoByUserId = asyncHandler(async (req, res) => {
+const getOrderByUserId = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validadeMongodbid(id);
   try {
@@ -550,5 +550,5 @@ module.exports = {
   getPedidos,
   updateStatusPedidos,
   getTodosPedidos,
-  getPedidoByUserId,
+  getOrderByUserId,
 };
