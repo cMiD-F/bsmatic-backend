@@ -1,7 +1,6 @@
-//const Color = require("../models/colorModel");
-const Aplicacao = require("../models/aplicacaoModel")
+const Aplicacao = require("../models/aplicacaoModel");
 const asyncHandler = require("express-async-handler");
-const validadeMongodbid = require("../utils/validadeMongodbid");
+const validateMongoDbId = require("../utils/validateMongodbId");
 
 const createAplicacao = asyncHandler(async (req, res) => {
   try {
@@ -13,7 +12,7 @@ const createAplicacao = asyncHandler(async (req, res) => {
 });
 const updateAplicacao = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const updatedAplicacao = await Aplicacao.findByIdAndUpdate(id, req.body, {
       new: true,
@@ -25,7 +24,7 @@ const updateAplicacao = asyncHandler(async (req, res) => {
 });
 const deleteAplicacao = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const deletedAplicacao = await Aplicacao.findByIdAndDelete(id);
     res.json(deletedAplicacao);
@@ -35,7 +34,7 @@ const deleteAplicacao = asyncHandler(async (req, res) => {
 });
 const getAplicacao = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const getaAplicacao = await Aplicacao.findById(id);
     res.json(getaAplicacao);

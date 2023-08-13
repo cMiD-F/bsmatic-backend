@@ -45,13 +45,14 @@ var produtoSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    imagens: [{
-      public_id: String,
-      url: String,
-    }],
+    images: [
+      {
+        public_id: String,
+        url: String,
+      },
+    ],
     aplicacao: [],
     tags: String,
-
     classificacao: [
       {
         star: Number,

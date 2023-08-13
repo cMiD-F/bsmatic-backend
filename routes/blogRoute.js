@@ -5,13 +5,12 @@ const {
   getBlog,
   getAllBlogs,
   deleteBlog,
-  curtidaBlog,
-  ncurtidaBlog,
-  uploadImagens,
-} = require("../controller/blogController");
-
+  liketheBlog,
+  disliketheBlog,
+  uploadImages,
+} = require("../controller/blogCtrl");
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
-const { uploadFoto, blogImgResize } = require("../middlewares/uploadImagens");
+const { blogImgResize, uploadPhoto } = require("../middlewares/uploadImage");
 const router = express.Router();
 
 router.post("/", authMiddleware, isAdmin, createBlog);
@@ -19,20 +18,18 @@ router.put(
   "/upload/:id",
   authMiddleware,
   isAdmin,
-  uploadFoto.array("imagens", 2),
+  uploadPhoto.array("images", 2),
   blogImgResize,
-  uploadImagens
+  uploadImages
 );
-
-
-router.put("/curtidas", authMiddleware, curtidaBlog);
-router.put("/ncurtidas", authMiddleware, ncurtidaBlog);
-
+router.put("/curtidas", authMiddleware, liketheBlog);
+router.put("/ncurtidas", authMiddleware, disliketheBlog);
 
 router.put("/:id", authMiddleware, isAdmin, updateBlog);
 
 router.get("/:id", getBlog);
 router.get("/", getAllBlogs);
+
 router.delete("/:id", authMiddleware, isAdmin, deleteBlog);
 
 module.exports = router;

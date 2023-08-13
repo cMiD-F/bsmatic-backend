@@ -7,38 +7,42 @@ const uniqid = require("uniqid");
 
 const asyncHandler = require("express-async-handler");
 const { generateToken } = require("../config/jwtToken");
-const validadeMongodbid = require("../utils/validadeMongodbid");
+const validateMongoDbId = require("../utils/validateMongodbId");
 const { generateRefreshToken } = require("../config/refreshtoken");
-const jwt = require("jsonwebtoken");
-const sendEmail = require("./emailController");
 const crypto = require("crypto");
+const jwt = require("jsonwebtoken");
+const sendEmail = require("./emailCtrl");
 
-// Cria usuário
+// Create a User ----------------------------------------------
+
 const createUser = asyncHandler(async (req, res) => {
   /**
-   * Todo: Obtenha o e-mail de req.body
-   **/
+   * TODO:Get the email from req.body
+   */
   const email = req.body.email;
   /**
-   * Com a ajuda do e-mail, descubra se o usuário existe ou não
-   **/
+   * TODO:With the help of email find the user exists or not
+   */
   const findUser = await User.findOne({ email: email });
 
   if (!findUser) {
     /**
-     * Se o usuário não for encontrado, crie um novo usuário
-     **/
+     * TODO:if user not found user create a new user
+     */
     const newUser = await User.create(req.body);
     res.json(newUser);
   } else {
+    /**
+     * TODO:if user found then thow an error: User already exists
+     */
     throw new Error("Usuário já existe");
   }
 });
 
-// Login do usuário
+// Login a user
 const loginUserController = asyncHandler(async (req, res) => {
   const { email, senha } = req.body;
-  // Verifica se o usuário existe ou não
+  // check if user exists or not
   const findUser = await User.findOne({ email });
   if (findUser && (await findUser.isPasswordMatched(senha))) {
     const refreshToken = await generateRefreshToken(findUser?._id);
@@ -53,12 +57,11 @@ const loginUserController = asyncHandler(async (req, res) => {
       httpOnly: true,
       maxAge: 72 * 60 * 60 * 1000,
     });
-
     res.json({
       _id: findUser?._id,
-      primeiroNome: findUser?.primeiroNome,
-      ultimoNome: findUser?.ultimoNome,
-      email: findUser.email,
+      primeironome: findUser?.primeironome,
+      ultimonome: findUser?.ultimonome,
+      email: findUser?.email,
       telefone: findUser?.telefone,
       token: generateToken(findUser?._id),
     });
@@ -67,10 +70,11 @@ const loginUserController = asyncHandler(async (req, res) => {
   }
 });
 
-// Login do admin
+// admin login
+
 const loginAdmin = asyncHandler(async (req, res) => {
   const { email, senha } = req.body;
-  // Verifica se o usuário existe ou não
+  // check if user exists or not
   const findAdmin = await User.findOne({ email });
   if (findAdmin.role !== "Admin") throw new Error("Não autorizado");
   if (findAdmin && (await findAdmin.isPasswordMatched(senha))) {
@@ -86,12 +90,11 @@ const loginAdmin = asyncHandler(async (req, res) => {
       httpOnly: true,
       maxAge: 72 * 60 * 60 * 1000,
     });
-
     res.json({
       _id: findAdmin?._id,
-      primeiroNome: findAdmin?.primeiroNome,
-      ultimoNome: findAdmin?.ultimoNome,
-      email: findAdmin.email,
+      primeironome: findAdmin?.primeironome,
+      ultimonome: findAdmin?.ultimonome,
+      email: findAdmin?.email,
       telefone: findAdmin?.telefone,
       token: generateToken(findAdmin?._id),
     });
@@ -100,28 +103,24 @@ const loginAdmin = asyncHandler(async (req, res) => {
   }
 });
 
-// Handle refresh token
+// handle refresh token
+
 const handleRefreshToken = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
-  if (!cookie?.refreshToken)
-    throw new Error("Nenhum token de atualização em cookies");
+  if (!cookie?.refreshToken) throw new Error("Nenhum token de atualização em cookies");
   const refreshToken = cookie.refreshToken;
-  console.log(refreshToken);
   const user = await User.findOne({ refreshToken });
-  if (!user)
-    throw new Error(
-      "Nenhum token de atualização presente no banco de dados ou não correspondido"
-    );
+  if (!user) throw new Error(" No Refresh token present in db or not matched");
   jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
     if (err || user.id !== decoded.id) {
-      throw new Error("Há algo errado com o token de atualização");
+      throw new Error("Nenhum token de atualização presente no banco de dados ou não correspondido");
     }
     const accessToken = generateToken(user?._id);
     res.json({ accessToken });
   });
 });
 
-// Funcionalidade Logout
+// logout functionality
 const logout = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
   if (!cookie?.refreshToken) throw new Error("No Refresh Token in Cookies");
@@ -144,17 +143,18 @@ const logout = asyncHandler(async (req, res) => {
   res.sendStatus(204); // forbidden
 });
 
-// Atualizando usuário
+// Update a user
+
 const updatedUser = asyncHandler(async (req, res) => {
-  console.log();
   const { _id } = req.user;
-  validadeMongodbid(_id);
+  validateMongoDbId(_id);
+
   try {
     const updatedUser = await User.findByIdAndUpdate(
       _id,
       {
-        primeiroNome: req?.body?.primeiroNome,
-        ultimoNome: req?.body?.ultimoNome,
+        primeironome: req?.body?.primeironome,
+        ultimonome: req?.body?.ultimonome,
         email: req?.body?.email,
         telefone: req?.body?.telefone,
       },
@@ -168,10 +168,11 @@ const updatedUser = asyncHandler(async (req, res) => {
   }
 });
 
-// Salva o endereço dos usuários
+// save user Address
+
 const salvaEndereco = asyncHandler(async (req, res, next) => {
   const { _id } = req.user;
-  validadeMongodbid(_id);
+  validateMongoDbId(_id);
 
   try {
     const updatedUser = await User.findByIdAndUpdate(
@@ -189,7 +190,8 @@ const salvaEndereco = asyncHandler(async (req, res, next) => {
   }
 });
 
-// Obtendo todos os usuários
+// Get all users
+
 const getallUsers = asyncHandler(async (req, res) => {
   try {
     const getUsers = await User.find();
@@ -199,10 +201,12 @@ const getallUsers = asyncHandler(async (req, res) => {
   }
 });
 
-// Obtendo um unico usuário
+// Get a single user
+
 const getaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
+
   try {
     const getaUser = await User.findById(id);
     res.json({
@@ -213,10 +217,12 @@ const getaUser = asyncHandler(async (req, res) => {
   }
 });
 
-// Deletando usuário
+// Get a single user
+
 const deleteaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
+
   try {
     const deleteaUser = await User.findByIdAndDelete(id);
     res.json({
@@ -227,10 +233,10 @@ const deleteaUser = asyncHandler(async (req, res) => {
   }
 });
 
-// Bloqueia usuário
 const blockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
+
   try {
     const blockusr = await User.findByIdAndUpdate(
       id,
@@ -247,10 +253,10 @@ const blockUser = asyncHandler(async (req, res) => {
   }
 });
 
-//Desbloqueia usuário
 const unblockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
+
   try {
     const unblock = await User.findByIdAndUpdate(
       id,
@@ -258,20 +264,21 @@ const unblockUser = asyncHandler(async (req, res) => {
         isBlocked: false,
       },
       {
-        new: false,
+        new: true,
       }
     );
-    res.json(unblock);
+    res.json({
+      message: "User UnBlocked",
+    });
   } catch (error) {
     throw new Error(error);
   }
 });
 
-//Atualiza senha
 const updateSenha = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   const { senha } = req.body;
-  validadeMongodbid(_id);
+  validateMongoDbId(_id);
   const user = await User.findById(_id);
   if (senha) {
     user.senha = senha;
@@ -282,7 +289,6 @@ const updateSenha = asyncHandler(async (req, res) => {
   }
 });
 
-//Esqueci token de senha
 const forgotSenhaToken = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
@@ -313,7 +319,7 @@ const resetSenha = asyncHandler(async (req, res) => {
     passwordResetExpires: { $gt: Date.now() },
   });
   if (!user) throw new Error("Token expirado, tente novamente mais tarde");
-  user.senha = senha;
+  user.password = senha;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
   await user.save();
@@ -323,7 +329,7 @@ const resetSenha = asyncHandler(async (req, res) => {
 const getListaDesejo = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   try {
-    const findUser = await User.findById(_id).populate("ListadeDesejos");
+    const findUser = await User.findById(_id).populate("listadedesejos");
     res.json(findUser);
   } catch (error) {
     throw new Error(error);
@@ -331,10 +337,9 @@ const getListaDesejo = asyncHandler(async (req, res) => {
 });
 
 const userCarrinho = asyncHandler(async (req, res) => {
-  const { _id } = req.user;
   const { carrinho } = req.body;
-
-  validadeMongodbid(_id);
+  const { _id } = req.user;
+  validateMongoDbId(_id);
   try {
     let produtos = [];
     const user = await User.findById(_id);
@@ -372,7 +377,7 @@ const userCarrinho = asyncHandler(async (req, res) => {
 
 const getUserCarrinho = asyncHandler(async (req, res) => {
   const { _id } = req.user;
-  validadeMongodbid(_id);
+  validateMongoDbId(_id);
   try {
     const carrinho = await Carrinho.findOne({ orderby: _id }).populate(
       "produtos.produto"
@@ -385,7 +390,7 @@ const getUserCarrinho = asyncHandler(async (req, res) => {
 
 const emptyCarrinho = asyncHandler(async (req, res) => {
   const { _id } = req.user;
-  validadeMongodbid(_id);
+  validateMongoDbId(_id);
   try {
     const user = await User.findOne({ _id });
     const cart = await Carrinho.findOneAndRemove({ orderby: user._id });
@@ -398,7 +403,7 @@ const emptyCarrinho = asyncHandler(async (req, res) => {
 const aplicaCupom = asyncHandler(async (req, res) => {
   const { cupom } = req.body;
   const { _id } = req.user;
-  validadeMongodbid(_id);
+  validateMongoDbId(_id);
   const validCupom = await Cupom.findOne({ nome: cupom });
   if (validCupom === null) {
     throw new Error("Cupom Inválido");
@@ -422,8 +427,7 @@ const aplicaCupom = asyncHandler(async (req, res) => {
 const criarPedido = asyncHandler(async (req, res) => {
   const { COD, cupomAplicado } = req.body;
   const { _id } = req.user;
-  validadeMongodbid(_id);
-
+  validateMongoDbId(_id);
   try {
     if (!COD) throw new Error("Falha ao criar ordem de pagamento");
     const user = await User.findById(_id);
@@ -432,7 +436,7 @@ const criarPedido = asyncHandler(async (req, res) => {
     if (cupomAplicado && userCarrinho.totalDpsDesconto) {
       quantidadeFinal = userCarrinho.totalDpsDesconto;
     } else {
-      quantidadeFinal = userCarrinho.carrinhoTotal;
+      quantidadeFinal = userCarrinho.cartTotal;
     }
 
     let novoPedido = await new Pedido({
@@ -467,10 +471,11 @@ const criarPedido = asyncHandler(async (req, res) => {
 
 const getPedidos = asyncHandler(async (req, res) => {
   const { _id } = req.user;
-  validadeMongodbid(_id);
+  validateMongoDbId(_id);
   try {
     const userpedidos = await Pedido.findOne({ orderby: _id })
       .populate("produtos.produto")
+      .populate("orderby")
       .exec();
     res.json(userpedidos);
   } catch (error) {
@@ -481,33 +486,31 @@ const getPedidos = asyncHandler(async (req, res) => {
 const getTodosPedidos = asyncHandler(async (req, res) => {
   try {
     const todosuserpedidos = await Pedido.find()
-      .populate("produtos.produto")
-      .populate("orderby")
-      .exec();
+    .populate("produtos.produto")
+    .populate("orderby")
+    .exec();
     res.json(todosuserpedidos);
   } catch (error) {
     throw new Error(error);
   }
 });
-
 const getOrderByUserId = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const userpedidos = await Pedido.findOne({ orderby: id })
-      .populate("produtos.produto")
-      .populate("orderby")
-      .exec();
+    .populate("produtos.produto")
+    .populate("orderby")
+    .exec();
     res.json(userpedidos);
   } catch (error) {
     throw new Error(error);
   }
 });
-
 const updateStatusPedidos = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const atualizaStatusPedido = await Pedido.findByIdAndUpdate(
       id,

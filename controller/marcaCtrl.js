@@ -1,6 +1,6 @@
 const Marca = require("../models/marcaModel");
 const asyncHandler = require("express-async-handler");
-const validadeMongodbid = require("../utils/validadeMongodbid");
+const validateMongoDbId = require("../utils/validateMongodbId");
 
 const createMarca = asyncHandler(async (req, res) => {
   try {
@@ -12,7 +12,7 @@ const createMarca = asyncHandler(async (req, res) => {
 });
 const updateMarca = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const updatedMarca = await Marca.findByIdAndUpdate(id, req.body, {
       new: true,
@@ -24,7 +24,7 @@ const updateMarca = asyncHandler(async (req, res) => {
 });
 const deleteMarca = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const deletedMarca = await Marca.findByIdAndDelete(id);
     res.json(deletedMarca);
@@ -34,7 +34,7 @@ const deleteMarca = asyncHandler(async (req, res) => {
 });
 const getMarca = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const getaMarca = await Marca.findById(id);
     res.json(getaMarca);

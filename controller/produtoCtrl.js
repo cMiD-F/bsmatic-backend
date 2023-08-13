@@ -2,10 +2,8 @@ const Produto = require("../models/produtoModel");
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
 const slugify = require("slugify");
-const validadeMongodbid = require("../utils/validadeMongodbid");
+const validateMongoDbId = require("../utils/validateMongodbId");
 
-
-// Cria um produto
 const createProduto = asyncHandler(async (req, res) => {
   try {
     if (req.body.item) {
@@ -20,13 +18,13 @@ const createProduto = asyncHandler(async (req, res) => {
 
 // Atualiza o produto
 const updatedProduto = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  validadeMongodbid(id);
+  const id = req.params;
+  validateMongoDbId(id);
   try {
     if (req.body.item) {
       req.body.slug = slugify(req.body.item);
     }
-    const updateProduto = await Produto.findByIdAndUpdate(id, req.body, {
+    const updateProduto = await Produto.findOneAndUpdate({ id }, req.body, {
       new: true,
     });
     res.json(updateProduto);
@@ -36,21 +34,20 @@ const updatedProduto = asyncHandler(async (req, res) => {
 });
 
 // Deleta um produto
-const deletaProduto = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  validadeMongodbid(id);
+const deleteProduto = asyncHandler(async (req, res) => {
+  const id = req.params;
+  validateMongoDbId(id);
   try {
-    const deleteProduto = await Produto.findByIdAndDelete(id);
+    const deleteProduto = await Produto.findOneAndDelete(id);
     res.json(deleteProduto);
   } catch (error) {
     throw new Error(error);
   }
 });
 
-//Obtem um produto
 const getaProduto = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const findProduto = await Produto.findById(id);
     res.json(findProduto);
@@ -59,20 +56,19 @@ const getaProduto = asyncHandler(async (req, res) => {
   }
 });
 
-//Obtem todos os produtos.
 const getAllProduto = asyncHandler(async (req, res) => {
   try {
     // Filtro
     const queryObj = { ...req.query };
     const excludeFields = ["page", "sort", "limit", "fields"];
     excludeFields.forEach((el) => delete queryObj[el]);
-    console.log(queryObj);
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
 
     let query = Produto.find(JSON.parse(queryStr));
 
     // Ordenação
+
     if (req.query.sort) {
       const sortBy = req.query.sort.split(",").join(" ");
       query = query.sort(sortBy);
@@ -81,6 +77,7 @@ const getAllProduto = asyncHandler(async (req, res) => {
     }
 
     // Limitando os campos
+
     if (req.query.fields) {
       const fields = req.query.fields.split(",").join(" ");
       query = query.select(fields);
@@ -89,37 +86,32 @@ const getAllProduto = asyncHandler(async (req, res) => {
     }
 
     // Paginação
+
     const page = req.query.page;
     const limit = req.query.limit;
     const skip = (page - 1) * limit;
     query = query.skip(skip).limit(limit);
     if (req.query.page) {
-      const produtoCount = await Product.countDocuments();
+      const produtoCount = await Produto.countDocuments();
       if (skip >= produtoCount) throw new Error("Esta página não existe");
     }
-    console.log(page, limit, skip);
-
     const produto = await query;
     res.json(produto);
   } catch (error) {
     throw new Error(error);
   }
 });
-
-// Adiciona item a lista de desejos
 const addListadeDesejos = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   const { prodId } = req.body;
   try {
     const user = await User.findById(_id);
-    const alreadyadded = user.ListadeDesejos.find(
-      (id) => id.toString() === prodId
-    );
+    const alreadyadded = user.listadedesejos.find((id) => id.toString() === prodId);
     if (alreadyadded) {
       let user = await User.findByIdAndUpdate(
         _id,
         {
-          $pull: { ListadeDesejos: prodId },
+          $pull: { listadedesejos: prodId },
         },
         {
           new: true,
@@ -130,7 +122,7 @@ const addListadeDesejos = asyncHandler(async (req, res) => {
       let user = await User.findByIdAndUpdate(
         _id,
         {
-          $push: { ListadeDesejos: prodId },
+          $push: { listadedesejos: prodId },
         },
         {
           new: true,
@@ -143,7 +135,7 @@ const addListadeDesejos = asyncHandler(async (req, res) => {
   }
 });
 
-const classificacao = asyncHandler(async (req, res) => {
+const rating = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   const { star, prodId, comentario } = req.body;
   try {
@@ -205,7 +197,7 @@ module.exports = {
   getaProduto,
   getAllProduto,
   updatedProduto,
-  deletaProduto,
+  deleteProduto,
   addListadeDesejos,
-  classificacao,
+  rating,
 };

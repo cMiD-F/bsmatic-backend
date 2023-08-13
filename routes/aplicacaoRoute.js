@@ -5,7 +5,7 @@ const {
   deleteAplicacao,
   getAplicacao,
   getallAplicacao,
-} = require("../controller/aplicacaoController");
+} = require("../controller/aplicacaoCtrl");
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const router = express.Router();
 

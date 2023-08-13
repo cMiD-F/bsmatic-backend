@@ -1,10 +1,9 @@
 const Blog = require("../models/blogModel");
 const User = require("../models/userModel");
 const asyncHandler = require("express-async-handler");
-const validadeMongodbid = require("../utils/validadeMongodbid");
+const validateMongoDbId = require("../utils/validateMongodbId");
 const cloudinaryUploadImg = require("../utils/cloudinary");
 const fs = require("fs");
-
 const createBlog = asyncHandler(async (req, res) => {
   try {
     const newBlog = await Blog.create(req.body);
@@ -16,7 +15,7 @@ const createBlog = asyncHandler(async (req, res) => {
 
 const updateBlog = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const updateBlog = await Blog.findByIdAndUpdate(id, req.body, {
       new: true,
@@ -29,12 +28,11 @@ const updateBlog = asyncHandler(async (req, res) => {
 
 const getBlog = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const getBlog = await Blog.findById(id)
-    .populate("likes")
-    .populate("dislikes");
-
+      .populate("likes")
+      .populate("dislikes");
     const updateViews = await Blog.findByIdAndUpdate(
       id,
       {
@@ -47,7 +45,6 @@ const getBlog = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
-
 const getAllBlogs = asyncHandler(async (req, res) => {
   try {
     const getBlogs = await Blog.find();
@@ -59,7 +56,7 @@ const getAllBlogs = asyncHandler(async (req, res) => {
 
 const deleteBlog = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const deletedBlog = await Blog.findByIdAndDelete(id);
     res.json(deletedBlog);
@@ -68,10 +65,9 @@ const deleteBlog = asyncHandler(async (req, res) => {
   }
 });
 
-const curtidaBlog = asyncHandler(async (req, res) => {
+const liketheBlog = asyncHandler(async (req, res) => {
   const { blogId } = req.body;
-  validadeMongodbid(blogId);
-  
+  validateMongoDbId(blogId);
   // Find the blog which you want to be liked
   const blog = await Blog.findById(blogId);
   // find the login user
@@ -115,10 +111,9 @@ const curtidaBlog = asyncHandler(async (req, res) => {
     res.json(blog);
   }
 });
-
-const ncurtidaBlog = asyncHandler(async (req, res) => {
+const disliketheBlog = asyncHandler(async (req, res) => {
   const { blogId } = req.body;
-  validadeMongodbid(blogId);
+  validateMongoDbId(blogId);
   // Find the blog which you want to be liked
   const blog = await Blog.findById(blogId);
   // find the login user
@@ -163,11 +158,11 @@ const ncurtidaBlog = asyncHandler(async (req, res) => {
   }
 });
 
-const uploadImagens = asyncHandler(async (req, res) => {
+const uploadImages = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
-    const uploader = (path) => cloudinaryUploadImg(path, "imagens");
+    const uploader = (path) => cloudinaryUploadImg(path, "images");
     const urls = [];
     const files = req.files;
     for (const file of files) {
@@ -180,7 +175,7 @@ const uploadImagens = asyncHandler(async (req, res) => {
     const findBlog = await Blog.findByIdAndUpdate(
       id,
       {
-        imagens: urls.map((file) => {
+        images: urls.map((file) => {
           return file;
         }),
       },
@@ -194,4 +189,13 @@ const uploadImagens = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { createBlog, updateBlog, getBlog, getAllBlogs, deleteBlog, curtidaBlog, ncurtidaBlog, uploadImagens };
+module.exports = {
+  createBlog,
+  updateBlog,
+  getBlog,
+  getAllBlogs,
+  deleteBlog,
+  liketheBlog,
+  disliketheBlog,
+  uploadImages,
+};

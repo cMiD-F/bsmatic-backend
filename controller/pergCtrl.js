@@ -1,6 +1,6 @@
-const Pergunta = require("../models/pergModel");
+const Pergunta = require("../models/pegModel");
 const asyncHandler = require("express-async-handler");
-const validadeMongodbid = require("../utils/validadeMongodbid");
+const validateMongoDbId = require("../utils/validateMongodbId");
 
 const createPergunta = asyncHandler(async (req, res) => {
   try {
@@ -10,10 +10,9 @@ const createPergunta = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
-
 const updatePergunta = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const updatedPergunta = await Pergunta.findByIdAndUpdate(id, req.body, {
       new: true,
@@ -23,10 +22,9 @@ const updatePergunta = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
-
 const deletePergunta = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const deletedPergunta = await Pergunta.findByIdAndDelete(id);
     res.json(deletedPergunta);
@@ -34,10 +32,9 @@ const deletePergunta = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
-
 const getPergunta = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const getaPergunta = await Pergunta.findById(id);
     res.json(getaPergunta);
@@ -45,7 +42,6 @@ const getPergunta = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
-
 const getallPergunta = asyncHandler(async (req, res) => {
   try {
     const getallPergunta = await Pergunta.find();
@@ -54,7 +50,6 @@ const getallPergunta = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
-
 module.exports = {
   createPergunta,
   updatePergunta,

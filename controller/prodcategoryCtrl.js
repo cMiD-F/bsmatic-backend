@@ -1,6 +1,6 @@
-const Categoria = require("../models/blogCatModel");
+const Categoria = require("../models/prodcategoryModel.js");
 const asyncHandler = require("express-async-handler");
-const validadeMongodbid = require("../utils/validadeMongodbid");
+const validateMongoDbId = require("../utils/validateMongodbId");
 
 const createCategoria = asyncHandler(async (req, res) => {
   try {
@@ -12,7 +12,7 @@ const createCategoria = asyncHandler(async (req, res) => {
 });
 const updateCategoria = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const updatedCategoria = await Categoria.findByIdAndUpdate(id, req.body, {
       new: true,
@@ -24,7 +24,7 @@ const updateCategoria = asyncHandler(async (req, res) => {
 });
 const deleteCategoria = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const deletedCategoria = await Categoria.findByIdAndDelete(id);
     res.json(deletedCategoria);
@@ -34,7 +34,7 @@ const deleteCategoria = asyncHandler(async (req, res) => {
 });
 const getCategoria = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  validadeMongodbid(id);
+  validateMongoDbId(id);
   try {
     const getaCategoria = await Categoria.findById(id);
     res.json(getaCategoria);
