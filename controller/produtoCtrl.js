@@ -17,21 +17,25 @@ const createProduto = asyncHandler(async (req, res) => {
 });
 
 // Atualiza o produto
-const updatedProduto = asyncHandler(async (req, res) => {
-  const id = req.params;
-  validateMongoDbId(id);
+const updatedProduto = asyncHandler(async (req, res, next) => {
   try {
+    const id = req.params.id; // Corrigido para obter o ID da rota corretamente
+    validateMongoDbId(id);
+
     if (req.body.item) {
       req.body.slug = slugify(req.body.item);
     }
-    const updateProduto = await Produto.findOneAndUpdate({ id }, req.body, {
+
+    const updateProduto = await Produto.findOneAndUpdate({ _id: id }, req.body, {
       new: true,
     });
+    
     res.json(updateProduto);
   } catch (error) {
-    throw new Error(error);
+    next(error); // Passar o erro ao próximo middleware de erro
   }
 });
+
 
 // Deleta um produto
 const deleteProduto = asyncHandler(async (req, res) => {
