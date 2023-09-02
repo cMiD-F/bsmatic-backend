@@ -11,7 +11,6 @@ var produtoSchema = new mongoose.Schema(
     slug: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
     },
     marca: {

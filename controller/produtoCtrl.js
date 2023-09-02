@@ -39,10 +39,15 @@ const updatedProduto = asyncHandler(async (req, res, next) => {
 
 // Deleta um produto
 const deleteProduto = asyncHandler(async (req, res) => {
-  const id = req.params;
+  const id = req.params.id; // Obtenha o ID do parâmetro
   validateMongoDbId(id);
+
   try {
-    const deleteProduto = await Produto.findOneAndDelete(id);
+    const deleteProduto = await Produto.findOneAndDelete({ _id: id });
+    if (!deleteProduto) {
+      return res.status(404).json({ message: 'Produto não encontrado' });
+    }
+
     res.json(deleteProduto);
   } catch (error) {
     throw new Error(error);
