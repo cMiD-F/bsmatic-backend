@@ -20,22 +20,25 @@ const createProduto = asyncHandler(async (req, res) => {
 const updatedProduto = asyncHandler(async (req, res, next) => {
   try {
     const id = req.params.id; // Corrigido para obter o ID da rota corretamente
-    validateMongoDbId(id);
+    validateMongoDbId(id); // Valide o ID aqui
 
     if (req.body.item) {
       req.body.slug = slugify(req.body.item);
     }
 
-    const updateProduto = await Produto.findOneAndUpdate({ _id: id }, req.body, {
-      new: true,
-    });
-    
+    const updateProduto = await Produto.findOneAndUpdate(
+      { _id: id },
+      req.body,
+      {
+        new: true,
+      }
+    );
+
     res.json(updateProduto);
   } catch (error) {
     next(error); // Passar o erro ao próximo middleware de erro
   }
 });
-
 
 // Deleta um produto
 const deleteProduto = asyncHandler(async (req, res) => {
@@ -45,7 +48,7 @@ const deleteProduto = asyncHandler(async (req, res) => {
   try {
     const deleteProduto = await Produto.findOneAndDelete({ _id: id });
     if (!deleteProduto) {
-      return res.status(404).json({ message: 'Produto não encontrado' });
+      return res.status(404).json({ message: "Produto não encontrado" });
     }
 
     res.json(deleteProduto);
@@ -110,39 +113,33 @@ const getAllProduto = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
-const addListadeDesejos = asyncHandler(async (req, res) => {
+
+// Método de adicionar produtos na lista de desejo
+/* const addListadeDesejos = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   const { prodId } = req.body;
   try {
     const user = await User.findById(_id);
-    const alreadyadded = user.listadedesejos.find((id) => id.toString() === prodId);
-    if (alreadyadded) {
-      let user = await User.findByIdAndUpdate(
-        _id,
-        {
-          $pull: { listadedesejos: prodId },
-        },
-        {
-          new: true,
-        }
-      );
-      res.json(user);
-    } else {
-      let user = await User.findByIdAndUpdate(
-        _id,
-        {
-          $push: { listadedesejos: prodId },
-        },
-        {
-          new: true,
-        }
-      );
-      res.json(user);
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
     }
+
+    const alreadyadded = user.listadedesejos.includes(prodId);
+
+    if (alreadyadded) {
+      user.listadedesejos = user.listadedesejos.filter((id) => id !== prodId);
+    } else {
+      user.listadedesejos.push(prodId);
+    }
+
+    const updatedUser = await user.save();
+    res.json(updatedUser);
   } catch (error) {
-    throw new Error(error);
+    next(error);
   }
-});
+}); */
+
 
 const rating = asyncHandler(async (req, res) => {
   const { _id } = req.user;
@@ -207,6 +204,6 @@ module.exports = {
   getAllProduto,
   updatedProduto,
   deleteProduto,
-  addListadeDesejos,
+  // addListadeDesejos,
   rating,
 };
