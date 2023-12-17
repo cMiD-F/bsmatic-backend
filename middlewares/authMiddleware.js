@@ -10,26 +10,29 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
       if (token) {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded?.id);
-        req.user = user;
-        next();
+        if (user) {
+          req.user = user;
+          return next();
+        } else {
+          return res.status(401).json({ message: 'Token não autorizado, faça login como admin' });
+        }
       }
     } catch (error) {
-      throw new Error("O token não autorizado, faça login como admin");
+      return res.status(401).json({ message: 'Token não autorizado, faça login como admin' });
     }
   } else {
-    throw new Error("Não há token anexado ao cabeçalho");
+    return res.status(401).json({ message: 'Token ausente no cabeçalho' });
   }
 });
 
-
-const isAdmin = asyncHandler(async(req, res, next) =>{
-    const {email} = req.user;
-    const adminUser = await User.findOne({email});
-    if(adminUser.role!== "Admin"){
-        throw new Error("Você não é um administrador");
-    } else {
-        next();
-    }
+const isAdmin = asyncHandler(async (req, res, next) => {
+  const { email } = req.user;
+  const adminUser = await User.findOne({ email });
+  if (adminUser.role !== "Admin") {
+    return res.status(403).json({ message: 'Você não é um administrador' });
+  } else {
+    return next();
+  }
 });
 
 module.exports = { authMiddleware, isAdmin };

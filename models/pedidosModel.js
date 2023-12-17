@@ -10,7 +10,6 @@ var pedidosSchema = new mongoose.Schema(
           ref: "Produto",
         },
         contagem: Number,
-        codigoTransmissao: String,
       },
     ],
     acompPagemento: {},

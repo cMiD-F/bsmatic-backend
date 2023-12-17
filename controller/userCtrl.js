@@ -340,35 +340,45 @@ const userCarrinho = asyncHandler(async (req, res) => {
   const { carrinho } = req.body;
   const { _id } = req.user;
   validateMongoDbId(_id);
+
   try {
     let produtos = [];
+    let carrinhoTotal = 0; // Declare a variável antes do loop
+
     const user = await User.findById(_id);
+
     // Verifica se o usuário já tem produto no carrinho
     const existeCarrinho = await Carrinho.findOne({ orderby: user._id });
     if (existeCarrinho) {
       existeCarrinho.remove();
     }
+
     for (let i = 0; i < carrinho.length; i++) {
       let objeto = {};
       objeto.produto = carrinho[i]._id;
       objeto.contagem = carrinho[i].contagem;
       objeto.codigoTransmissao = carrinho[i].codigoTransmissao;
+
       let getValorBS = await Produto.findById(carrinho[i]._id)
         .select("valorBS")
         .exec();
+
       objeto.valorBS = getValorBS.valorBS;
       produtos.push(objeto);
+      console.log(produtos, carrinhoTotal);
     }
-    let carrinhoTotal = 0;
+
     for (let i = 0; i < produtos.length; i++) {
       carrinhoTotal =
         carrinhoTotal + produtos[i].valorBS * produtos[i].contagem;
     }
+
     let newCarrinho = await new Carrinho({
       produtos,
       carrinhoTotal,
       orderby: user?._id,
     }).save();
+
     res.json(newCarrinho);
   } catch (error) {
     throw new Error(error);

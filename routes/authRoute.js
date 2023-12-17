@@ -37,7 +37,7 @@ router.put("/reset-senha/:token", resetSenha);
 router.put("/senha", authMiddleware, updateSenha);
 router.post("/login", loginUserController);
 router.post("/login-admin", loginAdmin);
-router.post("/carrinho", authMiddleware, userCarrinho);
+router.post("/carrinho",  authMiddleware, userCarrinho);
 router.post("/carrinho/aplicacupom", authMiddleware, aplicaCupom);
 router.post("/carrinho/ordem-pagamento", authMiddleware, criarPedido);
 router.get("/todos-usuarios", getallUsers);
