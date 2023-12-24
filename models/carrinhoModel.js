@@ -1,30 +1,32 @@
-const mongoose = require("mongoose"); // Erase if already required
+const mongoose = require("mongoose");
 
-// Declare the Schema of the Mongo model
-var carrinhoSchema = new mongoose.Schema(
+const carrinhoSchema = new mongoose.Schema(
   {
+    usuario: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // Assumindo que você tem um modelo de usuário chamado Usuario
+    },
     produtos: [
       {
         produto: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Produto",
+          ref: "Produto", // Assumindo que você tem um modelo de produto chamado Produto
         },
-        contagem: Number,
-        codigoTransmissao: String,
-        valorBS: Number,
+        quantidade: {
+          type: Number,
+          required: true,
+          default: 1,
+        },
+        valorBS: {
+          type: Number,
+          required: true,
+        },
       },
     ],
-    carrinhoTotal: Number,
-    totalDpsDesconto: Number,
-    orderby: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
   },
   {
     timestamps: true,
   }
 );
 
-//Export the model
 module.exports = mongoose.model("Carrinho", carrinhoSchema);

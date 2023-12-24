@@ -337,51 +337,52 @@ const getListaDesejo = asyncHandler(async (req, res) => {
 });
 
 const userCarrinho = asyncHandler(async (req, res) => {
-  const { carrinho } = req.body;
+  const { produtoId, quantidade, valorBS } = req.body;
   const { _id } = req.user;
   validateMongoDbId(_id);
 
   try {
-    let produtos = [];
-    let carrinhoTotal = 0; // Declare a variável antes do loop
+    // Verificar se o produto já está no carrinho do usuário
+    let carrinhoExistente = await Carrinho.findOne({ userId: _id });
 
-    const user = await User.findById(_id);
+    if (!carrinhoExistente) {
+      // Se não houver carrinho existente, cria um novo carrinho
+      carrinhoExistente = await Carrinho.create({
+        userId: _id,
+        produtos: [
+          {
+            produtoId,
+            quantidade,
+            valorBS,
+          },
+        ],
+      });
+    } else {
+      // Se houver carrinho existente, verifica se o produto já está no carrinho
+      const produtoExistente = carrinhoExistente.produtos.find(
+        (produto) => produto.produtoId.toString() === produtoId
+      );
 
-    // Verifica se o usuário já tem produto no carrinho
-    const existeCarrinho = await Carrinho.findOne({ orderby: user._id });
-    if (existeCarrinho) {
-      existeCarrinho.remove();
+      if (produtoExistente) {
+        // Se o produto já estiver no carrinho, atualiza a quantidade
+        produtoExistente.quantidade += quantidade;
+        produtoExistente.valorBS = valorBS;
+      } else {
+        // Se o produto não estiver no carrinho, adiciona o produto ao carrinho
+        carrinhoExistente.produtos.push({
+          produtoId,
+          quantidade,
+          valorBS,
+        });
+      }
     }
 
-    for (let i = 0; i < carrinho.length; i++) {
-      let objeto = {};
-      objeto.produto = carrinho[i]._id;
-      objeto.contagem = carrinho[i].contagem;
-      objeto.codigoTransmissao = carrinho[i].codigoTransmissao;
-
-      let getValorBS = await Produto.findById(carrinho[i]._id)
-        .select("valorBS")
-        .exec();
-
-      objeto.valorBS = getValorBS.valorBS;
-      produtos.push(objeto);
-      console.log(produtos, carrinhoTotal);
-    }
-
-    for (let i = 0; i < produtos.length; i++) {
-      carrinhoTotal =
-        carrinhoTotal + produtos[i].valorBS * produtos[i].contagem;
-    }
-
-    let newCarrinho = await new Carrinho({
-      produtos,
-      carrinhoTotal,
-      orderby: user?._id,
-    }).save();
-
-    res.json(newCarrinho);
+    // Salva o carrinho no banco de dados
+    await carrinhoExistente.save();
+    res.json(carrinhoExistente);
   } catch (error) {
-    throw new Error(error);
+    console.error("Erro ao manipular carrinho:", error);
+    throw new Error("Erro ao manipular carrinho");
   }
 });
 
@@ -389,8 +390,8 @@ const getUserCarrinho = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
   try {
-    const carrinho = await Carrinho.findOne({ orderby: _id }).populate(
-      "produtos.produto"
+    const carrinho = await Carrinho.findOne({ userId: _id }).populate(
+      "produtos.produtoId"
     );
     res.json(carrinho);
   } catch (error) {
@@ -403,7 +404,7 @@ const emptyCarrinho = asyncHandler(async (req, res) => {
   validateMongoDbId(_id);
   try {
     const user = await User.findOne({ _id });
-    const cart = await Carrinho.findOneAndRemove({ orderby: user._id });
+    const cart = await Carrinho.findOneAndRemove({ userId: user._id });
     res.json(cart);
   } catch (error) {
     throw new Error(error);
