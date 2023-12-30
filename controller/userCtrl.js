@@ -338,51 +338,18 @@ const getListaDesejo = asyncHandler(async (req, res) => {
 
 const userCarrinho = asyncHandler(async (req, res) => {
   const { produtoId, quantidade, valorBS } = req.body;
-  const { _id } = req.user;
+  const {_id} = req.user;
   validateMongoDbId(_id);
-
   try {
-    // Verificar se o produto já está no carrinho do usuário
-    let carrinhoExistente = await Carrinho.findOne({ userId: _id });
-
-    if (!carrinhoExistente) {
-      // Se não houver carrinho existente, cria um novo carrinho
-      carrinhoExistente = await Carrinho.create({
-        userId: _id,
-        produtos: [
-          {
-            produtoId,
-            quantidade,
-            valorBS,
-          },
-        ],
-      });
-    } else {
-      // Se houver carrinho existente, verifica se o produto já está no carrinho
-      const produtoExistente = carrinhoExistente.produtos.find(
-        (produto) => produto.produtoId.toString() === produtoId
-      );
-
-      if (produtoExistente) {
-        // Se o produto já estiver no carrinho, atualiza a quantidade
-        produtoExistente.quantidade += quantidade;
-        produtoExistente.valorBS = valorBS;
-      } else {
-        // Se o produto não estiver no carrinho, adiciona o produto ao carrinho
-        carrinhoExistente.produtos.push({
-          produtoId,
-          quantidade,
-          valorBS,
-        });
-      }
-    }
-
-    // Salva o carrinho no banco de dados
-    await carrinhoExistente.save();
-    res.json(carrinhoExistente);
+    let newCarrinho = await new Carrinho({
+      userId:_id,
+      produtoId,
+      quantidade,
+      valorBS,
+    }).save();
+    res.json(newCarrinho);
   } catch (error) {
-    console.error("Erro ao manipular carrinho:", error);
-    throw new Error("Erro ao manipular carrinho");
+    throw new Error(error)
   }
 });
 
@@ -390,8 +357,8 @@ const getUserCarrinho = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
   try {
-    const carrinho = await Carrinho.findOne({ userId: _id }).populate(
-      "produtos.produtoId"
+    const carrinho = await Carrinho.find({ userId: _id }).populate(
+      "produtoId"
     );
     res.json(carrinho);
   } catch (error) {
