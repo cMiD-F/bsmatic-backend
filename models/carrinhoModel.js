@@ -17,6 +17,9 @@ const carrinhoSchema = new mongoose.Schema(
     valorBS: {
       type: Number,
       required: true
+    },
+    carrinhoTotal:{
+      type: Number
     }
   },
   {

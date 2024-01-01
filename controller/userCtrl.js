@@ -12,6 +12,7 @@ const { generateRefreshToken } = require("../config/refreshtoken");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const sendEmail = require("./emailCtrl");
+const { log } = require("console");
 
 // Create a User ----------------------------------------------
 
@@ -366,6 +367,33 @@ const getUserCarrinho = asyncHandler(async (req, res) => {
   }
 });
 
+const removeProductFromCart = asyncHandler(async(req, res) => {
+  const { _id } = req.user;
+  const {carrinhoItemId} = req.params;
+  console.log(carrinhoItemId);
+  validateMongoDbId(_id);
+  try {
+    const deleteProductFromCart = await Carrinho.deleteOne({userId:_id,_id:carrinhoItemId})
+    res.json(deleteProductFromCart);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const updateProductQuantityFromCart = asyncHandler(async(req, res) => {
+  const {_id} = req.user;
+  const {carrinhoItemId, newQuantity}=req.params;
+  validateMongoDbId(_id);
+  try {
+    const carrinhoItem = await Carrinho.findOne({userId:_id,_id:carrinhoItemId})
+    carrinhoItem.quantidade = newQuantity
+    carrinhoItem.save()
+    res.json(carrinhoItem);
+  } catch (error) {
+    throw new Error(error);
+  }
+})
+
 const emptyCarrinho = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
@@ -532,4 +560,6 @@ module.exports = {
   updateStatusPedidos,
   getTodosPedidos,
   getOrderByUserId,
+  removeProductFromCart,
+  updateProductQuantityFromCart,
 };
