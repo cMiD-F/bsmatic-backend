@@ -442,7 +442,7 @@ const criarPedido = asyncHandler(async (req, res) => {
     if (cupomAplicado && userCarrinho.totalDpsDesconto) {
       quantidadeFinal = userCarrinho.totalDpsDesconto;
     } else {
-      quantidadeFinal = userCarrinho.cartTotal;
+      quantidadeFinal = userCarrinho.carrinhoTotal;
     }
 
     let novoPedido = await new Pedido({
