@@ -41,7 +41,7 @@ var userSchema = new mongoose.Schema(
     endereco: {
       type: String,
     },
-    listadedesejos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Produto" }],
+    // listadedesejos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Produto" }],
     refreshToken: {
       type: String,
     },

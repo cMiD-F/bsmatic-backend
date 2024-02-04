@@ -21,7 +21,7 @@ const {
   getUserCarrinho,
   emptyCarrinho,
   aplicaCupom,
-  criarPedido,
+  createOrder,
   getPedidos,
   updateStatusPedidos,
   getTodosPedidos,
@@ -55,7 +55,7 @@ router.post("/login-admin", loginAdmin);
 // Rotas relacionadas ao carrinho
 router.post("/carrinho", authMiddleware, userCarrinho);
 router.post("/carrinho/aplicacupom", authMiddleware, aplicaCupom);
-router.post("/carrinho/ordem-pagamento", authMiddleware, criarPedido);
+router.post("/carrinho/ordem-pagamento", authMiddleware, createOrder);
 router.get("/carrinho", authMiddleware, getUserCarrinho);
 router.delete("/carrinho-vazio", authMiddleware, emptyCarrinho);
 

@@ -45,76 +45,81 @@ const loginUserController = asyncHandler(async (req, res) => {
   const { email, senha } = req.body;
   // check if user exists or not
   const findUser = await User.findOne({ email });
-  if (findUser && (await findUser.isPasswordMatched(senha))) {
-    const refreshToken = await generateRefreshToken(findUser?._id);
-    const updateuser = await User.findByIdAndUpdate(
-      findUser.id,
-      {
-        refreshToken: refreshToken,
-      },
-      { new: true }
-    );
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      maxAge: 72 * 60 * 60 * 1000,
-    });
-    res.json({
-      _id: findUser?._id,
-      primeironome: findUser?.primeironome,
-      ultimonome: findUser?.ultimonome,
-      email: findUser?.email,
-      telefone: findUser?.telefone,
-      token: generateToken(findUser?._id),
-    });
-  } else {
+  if (!findUser) {
     throw new Error("Credenciais inválidas");
   }
+  if (!(await findUser.isPasswordMatched(senha))) {
+    throw new Error("Credenciais inválidas");
+  }
+  const refreshToken = await generateRefreshToken(findUser._id);
+  const updateuser = await User.findByIdAndUpdate(
+    findUser._id,
+    {
+      refreshToken: refreshToken,
+    },
+    { new: true }
+  );
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    maxAge: 72 * 60 * 60 * 1000,
+  });
+  res.json({
+    _id: findUser._id,
+    primeironome: findUser.primeironome,
+    ultimonome: findUser.ultimonome,
+    email: findUser.email,
+    telefone: findUser.telefone,
+    token: generateToken(findUser._id),
+  });
 });
 
 // admin login
-
 const loginAdmin = asyncHandler(async (req, res) => {
   const { email, senha } = req.body;
   // check if user exists or not
   const findAdmin = await User.findOne({ email });
-  if (findAdmin.role !== "Admin") throw new Error("Não autorizado");
-  if (findAdmin && (await findAdmin.isPasswordMatched(senha))) {
-    const refreshToken = await generateRefreshToken(findAdmin?._id);
-    const updateuser = await User.findByIdAndUpdate(
-      findAdmin.id,
-      {
-        refreshToken: refreshToken,
-      },
-      { new: true }
-    );
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      maxAge: 72 * 60 * 60 * 1000,
-    });
-    res.json({
-      _id: findAdmin?._id,
-      primeironome: findAdmin?.primeironome,
-      ultimonome: findAdmin?.ultimonome,
-      email: findAdmin?.email,
-      telefone: findAdmin?.telefone,
-      token: generateToken(findAdmin?._id),
-    });
-  } else {
+  if (!findAdmin || findAdmin.role !== "Admin") {
     throw new Error("Credenciais inválidas");
   }
+  if (!(await findAdmin.isPasswordMatched(senha))) {
+    throw new Error("Credenciais inválidas");
+  }
+  const refreshToken = await generateRefreshToken(findAdmin._id);
+  const updateuser = await User.findByIdAndUpdate(
+    findAdmin._id,
+    {
+      refreshToken: refreshToken,
+    },
+    { new: true }
+  );
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    maxAge: 72 * 60 * 60 * 1000,
+  });
+  res.json({
+    _id: findAdmin._id,
+    primeironome: findAdmin.primeironome,
+    ultimonome: findAdmin.ultimonome,
+    email: findAdmin.email,
+    telefone: findAdmin.telefone,
+    token: generateToken(findAdmin._id),
+  });
 });
 
 // handle refresh token
 
 const handleRefreshToken = asyncHandler(async (req, res) => {
   const cookie = req.cookies;
-  if (!cookie?.refreshToken) throw new Error("Nenhum token de atualização em cookies");
+  if (!cookie?.refreshToken)
+    throw new Error("Nenhum token de atualização em cookies");
   const refreshToken = cookie.refreshToken;
   const user = await User.findOne({ refreshToken });
   if (!user) throw new Error(" No Refresh token present in db or not matched");
   jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
     if (err || user.id !== decoded.id) {
-      throw new Error("Nenhum token de atualização presente no banco de dados ou não correspondido");
+      throw new Error(
+        "Nenhum token de atualização presente no banco de dados ou não correspondido"
+      );
     }
     const accessToken = generateToken(user?._id);
     res.json({ accessToken });
@@ -339,18 +344,19 @@ const getListaDesejo = asyncHandler(async (req, res) => {
 
 const userCarrinho = asyncHandler(async (req, res) => {
   const { produtoId, quantidade, valorBS } = req.body;
-  const {_id} = req.user;
+  const { _id } = req.user;
   validateMongoDbId(_id);
   try {
     let newCarrinho = await new Carrinho({
-      userId:_id,
+      userId: _id,
       produtoId,
       quantidade,
       valorBS,
+      orderby: _id, // Adicionando o valor de _id ao campo orderby
     }).save();
     res.json(newCarrinho);
   } catch (error) {
-    throw new Error(error)
+    throw new Error(error);
   }
 });
 
@@ -358,41 +364,45 @@ const getUserCarrinho = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
   try {
-    const carrinho = await Carrinho.find({ userId: _id }).populate(
-      "produtoId"
-    );
+    const carrinho = await Carrinho.find({ userId: _id }).populate("produtoId");
     res.json(carrinho);
   } catch (error) {
     throw new Error(error);
   }
 });
 
-const removeProductFromCart = asyncHandler(async(req, res) => {
+const removeProductFromCart = asyncHandler(async (req, res) => {
   const { _id } = req.user;
-  const {carrinhoItemId} = req.params;
+  const { carrinhoItemId } = req.params;
   console.log(carrinhoItemId);
   validateMongoDbId(_id);
   try {
-    const deleteProductFromCart = await Carrinho.deleteOne({userId:_id,_id:carrinhoItemId})
+    const deleteProductFromCart = await Carrinho.deleteOne({
+      userId: _id,
+      _id: carrinhoItemId,
+    });
     res.json(deleteProductFromCart);
   } catch (error) {
     throw new Error(error);
   }
 });
 
-const updateProductQuantityFromCart = asyncHandler(async(req, res) => {
-  const {_id} = req.user;
-  const {carrinhoItemId, newQuantity}=req.params;
+const updateProductQuantityFromCart = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  const { carrinhoItemId, newQuantity } = req.params;
   validateMongoDbId(_id);
   try {
-    const carrinhoItem = await Carrinho.findOne({userId:_id,_id:carrinhoItemId})
-    carrinhoItem.quantidade = newQuantity
-    carrinhoItem.save()
+    const carrinhoItem = await Carrinho.findOne({
+      userId: _id,
+      _id: carrinhoItemId,
+    });
+    carrinhoItem.quantidade = newQuantity;
+    carrinhoItem.save();
     res.json(carrinhoItem);
   } catch (error) {
     throw new Error(error);
   }
-})
+});
 
 const emptyCarrinho = asyncHandler(async (req, res) => {
   const { _id } = req.user;
@@ -430,59 +440,65 @@ const aplicaCupom = asyncHandler(async (req, res) => {
   res.json(totalDpsDesconto);
 });
 
-const criarPedido = asyncHandler(async (req, res) => {
-  const { COD, cupomAplicado } = req.body;
+const createOrder = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
-  try {
-    if (!COD) throw new Error("Falha ao criar ordem de pagamento");
-    const user = await User.findById(_id);
-    let userCarrinho = await Carrinho.findOne({ orderby: user._id });
-    let quantidadeFinal = 0;
-    if (cupomAplicado && userCarrinho.totalDpsDesconto) {
-      quantidadeFinal = userCarrinho.totalDpsDesconto;
-    } else {
-      quantidadeFinal = userCarrinho.carrinhoTotal;
-    }
 
-    let novoPedido = await new Pedido({
-      produtos: userCarrinho.produtos,
-      acompPagemento: {
-        id: uniqid(),
-        metodo: "COD",
-        valor: quantidadeFinal,
-        status: "Pagamento Confirmado",
-        criado: Date.now(),
-        moeda: "brl",
-      },
-      orderby: user._id,
-      pedidoStatus: "Pagamento Confirmado",
-    }).save();
-    let update = userCarrinho.produtos.map((item) => {
-      return {
-        updateOne: {
-          filter: { _id: item.produto._id },
-          update: {
-            $inc: { quantidade: -item.contagem, sold: +item.contagem },
-          },
-        },
-      };
-    });
-    const updated = await Produto.bulkWrite(update, {});
-    res.json({ message: "sucesso" });
-  } catch (error) {
-    throw new Error(error);
+  // 1. Encontrar os itens no carrinho do usuário
+  const carrinhoItens = await Carrinho.find({ userId: _id }).populate(
+    "produtoId"
+  );
+
+  // 2. Verificar se o carrinho não está vazio
+  if (carrinhoItens.length === 0) {
+    throw new Error(
+      "Carrinho vazio. Não é possível criar uma ordem de pagamento."
+    );
   }
+
+  // 3. Calcular o valor total e o subtotal de cada item da ordem
+  const produtosComSubtotal = carrinhoItens.map((item) => ({
+    produto: item.produtoId,
+    contagem: item.quantidade,
+    subtotal: item.valorBS * item.quantidade,
+  }));
+
+  const ordemTotal = produtosComSubtotal.reduce(
+    (total, item) => total + item.subtotal,
+    0
+  );
+
+  // 4. Criar a ordem de pagamento
+  const novaOrdem = await Pedido.create({
+    produtos: produtosComSubtotal,
+    pedidoStatus: "Não Processado", // Defina o status inicial da ordem conforme necessário
+    orderby: _id,
+  });
+
+  // 5. Limpar o carrinho do usuário
+  await Carrinho.deleteMany({ userId: _id });
+
+  res.json({
+    message: "Ordem de pagamento criada com sucesso",
+    ordem: {
+      produtos: produtosComSubtotal,
+      pedidoStatus: novaOrdem.pedidoStatus,
+      orderby: novaOrdem.orderby,
+      _id: novaOrdem._id,
+      createdAt: novaOrdem.createdAt,
+      updatedAt: novaOrdem.updatedAt,
+      __v: novaOrdem.__v,
+      total: ordemTotal, // Adicionando o valor total à resposta
+    },
+  });
 });
 
 const getPedidos = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
+
   try {
-    const userpedidos = await Pedido.findOne({ orderby: _id })
-      .populate("produtos.produto")
-      .populate("orderby")
-      .exec();
+    const userpedidos = await Pedido.find({ orderby: _id }).populate("orderby");
     res.json(userpedidos);
   } catch (error) {
     throw new Error(error);
@@ -492,27 +508,29 @@ const getPedidos = asyncHandler(async (req, res) => {
 const getTodosPedidos = asyncHandler(async (req, res) => {
   try {
     const todosuserpedidos = await Pedido.find()
-    .populate("produtos.produto")
-    .populate("orderby")
-    .exec();
+      .populate("produtos.produto")
+      .populate("orderby")
+      .exec();
     res.json(todosuserpedidos);
   } catch (error) {
     throw new Error(error);
   }
 });
+
 const getOrderByUserId = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongoDbId(id);
   try {
     const userpedidos = await Pedido.findOne({ orderby: id })
-    .populate("produtos.produto")
-    .populate("orderby")
-    .exec();
+      .populate("produtos.produto")
+      .populate("orderby")
+      .exec();
     res.json(userpedidos);
   } catch (error) {
     throw new Error(error);
   }
 });
+
 const updateStatusPedidos = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const { id } = req.params;
@@ -529,6 +547,20 @@ const updateStatusPedidos = asyncHandler(async (req, res) => {
       { new: true }
     );
     res.json(atualizaStatusPedido);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getMyOrders = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  try {
+    const orders = await Pedido.find({ user: _id })
+      .populate("user")
+      .populate("orderItems.produto");
+    res.json({
+      orders,
+    });
   } catch (error) {
     throw new Error(error);
   }
@@ -555,11 +587,12 @@ module.exports = {
   getUserCarrinho,
   emptyCarrinho,
   aplicaCupom,
-  criarPedido,
+  createOrder,
   getPedidos,
   updateStatusPedidos,
   getTodosPedidos,
   getOrderByUserId,
   removeProductFromCart,
   updateProductQuantityFromCart,
+  getMyOrders,
 };
