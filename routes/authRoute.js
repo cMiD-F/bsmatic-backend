@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const {
   createUser,
-  loginUserController,
+  loginUserCtrl,
   getallUsers,
   getaUser,
   deleteaUser,
@@ -15,22 +15,26 @@ const {
   forgotSenhaToken,
   resetSenha,
   loginAdmin,
-  getListaDesejo,
+  getWishlist,
   salvaEndereco,
   userCarrinho,
   getUserCarrinho,
   emptyCarrinho,
   aplicaCupom,
-  createOrder,
-  getPedidos,
-  updateStatusPedidos,
-  getTodosPedidos,
-  getOrderByUserId,
+  createPedido,
+  getMyPedidos,
+  getAllPedidos,
+  getsinglePedido,
+  updatePedido,
+  getMonthWisePedidoIncome,
+  getYearlyTotalPedido,
+
   removeProductFromCart,
   updateProductQuantityFromCart,
 } = require("../controller/userCtrl");
 
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
+const { checkout, paymentVerification } = require("../controller/paymentCtrl");
 const router = express.Router();
 
 // Configuração de CORS específica para essas rotas
@@ -49,30 +53,44 @@ router.post("/forgot-senha-token", forgotSenhaToken);
 router.put("/reset-senha/:token", resetSenha);
 
 router.put("/senha", authMiddleware, updateSenha);
-router.post("/login", loginUserController);
+router.post("/login", loginUserCtrl);
 router.post("/login-admin", loginAdmin);
-
-// Rotas relacionadas ao carrinho
 router.post("/carrinho", authMiddleware, userCarrinho);
-router.post("/carrinho/aplicacupom", authMiddleware, aplicaCupom);
-router.post("/carrinho/ordem-pagamento", authMiddleware, createOrder);
-router.get("/carrinho", authMiddleware, getUserCarrinho);
-router.delete("/carrinho-vazio", authMiddleware, emptyCarrinho);
+router.post("/pedido/checkout", authMiddleware, checkout);
+router.post("/pedido/paymentVerification", authMiddleware, paymentVerification);
 
-
+router.post("/carrinho/cria-pedido", authMiddleware, createPedido);
 router.get("/todos-usuarios", getallUsers);
-router.get("/obtem-pedido", authMiddleware, getPedidos);
-router.get("/obtem-todos-pedidos", authMiddleware, isAdmin, getTodosPedidos);
-router.post("/obtempedidoporusuario/:id", authMiddleware, isAdmin, getOrderByUserId);
+router.get("/getmeuspedidos", authMiddleware, getMyPedidos);
+router.get("/gettodospedidos", authMiddleware, isAdmin, getAllPedidos);
+router.get("/getPedido/:id", authMiddleware, isAdmin, getsinglePedido);
+router.put("/updatePedido/:id", authMiddleware, isAdmin, updatePedido);
+
+router.get("/getMonthWisePedidosIncome", authMiddleware, getMonthWisePedidoIncome);
+router.get("/getyearlypedidos", authMiddleware, getYearlyTotalPedido);
+
 router.get("/refresh", handleRefreshToken);
 router.get("/logout", logout);
-router.get("/listaDesejo", authMiddleware, getListaDesejo);
+router.get("/wishlist", authMiddleware, getWishlist);
+router.get("/carrinho", authMiddleware, getUserCarrinho);
 
 router.get("/:id", authMiddleware, isAdmin, getaUser);
-router.delete("/delete-product-cart/:carrinhoItemId", authMiddleware, removeProductFromCart);
-router.delete("/update-product-cart/:carrinhoItemId/:newQuantity", authMiddleware, updateProductQuantityFromCart);
+
+router.delete(
+  "/delete-product-cart/:cartItemId",
+  authMiddleware,
+  removeProductFromCart
+);
+router.delete(
+  "/update-product-cart/:cartItemId/:newQuantidade",
+  authMiddleware,
+  updateProductQuantityFromCart
+);
+
+router.delete("/empty-cart", authMiddleware, emptyCarrinho);
+
 router.delete("/:id", deleteaUser);
-router.put("/pedido/atualiza-pedido/:id", authMiddleware, isAdmin, updateStatusPedidos);
+
 router.put("/edit-user", authMiddleware, updatedUser);
 router.put("/salvar-endereco", authMiddleware, salvaEndereco);
 router.put("/block-user/:id", authMiddleware, isAdmin, blockUser);

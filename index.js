@@ -4,12 +4,10 @@ const cors = require("cors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const dbConnect = require("./config/dbConnect");
-
 const { notFound, errorHandler } = require("./middlewares/errorHandler");
 const app = express();
 const dotenv = require("dotenv").config();
 const PORT = 5000;
-
 const authRouter = require("./routes/authRoute");
 const produtoRouter = require("./routes/productRoute");
 const blogRouter = require("./routes/blogRoute");

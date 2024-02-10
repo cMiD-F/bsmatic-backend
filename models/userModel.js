@@ -26,9 +26,8 @@ var userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    role: {
+    endereco: {
       type: String,
-      default: "user",
     },
     isBlocked: {
       type: Boolean,
@@ -38,10 +37,8 @@ var userSchema = new mongoose.Schema(
       type: Array,
       default: [],
     },
-    endereco: {
-      type: String,
-    },
-    // listadedesejos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Produto" }],
+    
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Produto" }],
     refreshToken: {
       type: String,
     },

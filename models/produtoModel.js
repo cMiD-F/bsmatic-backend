@@ -38,7 +38,6 @@ var produtoSchema = new mongoose.Schema(
     },
     garantia: {
       type: String,
-      required: true,
     },
     categoria: {
       type: String,

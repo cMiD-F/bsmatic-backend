@@ -41,36 +41,34 @@ const createUser = asyncHandler(async (req, res) => {
 });
 
 // Login a user
-const loginUserController = asyncHandler(async (req, res) => {
+const loginUserCtrl = asyncHandler(async (req, res) => {
   const { email, senha } = req.body;
   // check if user exists or not
   const findUser = await User.findOne({ email });
-  if (!findUser) {
+  if (findUser && (await findUser.isPasswordMatched(senha))) {
+    const refreshToken = await generateRefreshToken(findUser?._id);
+    const updateuser = await User.findByIdAndUpdate(
+      findUser._id,
+      {
+        refreshToken: refreshToken,
+      },
+      { new: true }
+    );
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      maxAge: 72 * 60 * 60 * 1000,
+    });
+    res.json({
+      _id: findUser._id,
+      primeironome: findUser.primeironome,
+      ultimonome: findUser.ultimonome,
+      email: findUser.email,
+      telefone: findUser.telefone,
+      token: generateToken(findUser._id),
+    });
+  } else {
     throw new Error("Credenciais inválidas");
   }
-  if (!(await findUser.isPasswordMatched(senha))) {
-    throw new Error("Credenciais inválidas");
-  }
-  const refreshToken = await generateRefreshToken(findUser._id);
-  const updateuser = await User.findByIdAndUpdate(
-    findUser._id,
-    {
-      refreshToken: refreshToken,
-    },
-    { new: true }
-  );
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    maxAge: 72 * 60 * 60 * 1000,
-  });
-  res.json({
-    _id: findUser._id,
-    primeironome: findUser.primeironome,
-    ultimonome: findUser.ultimonome,
-    email: findUser.email,
-    telefone: findUser.telefone,
-    token: generateToken(findUser._id),
-  });
 });
 
 // admin login
@@ -78,32 +76,31 @@ const loginAdmin = asyncHandler(async (req, res) => {
   const { email, senha } = req.body;
   // check if user exists or not
   const findAdmin = await User.findOne({ email });
-  if (!findAdmin || findAdmin.role !== "Admin") {
+  if (findAdmin.role !== "admin") throw new Error("Usuário não autorizado!");
+  if (findAdmin && (await findAdmin.isPasswordMatched(senha))) {
+    const refreshToken = await generateRefreshToken(findAdmin?._id);
+    const updateuser = await User.findByIdAndUpdate(
+      findAdmin.id,
+      {
+        refreshToken: refreshToken,
+      },
+      { new: true }
+    );
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      maxAge: 72 * 60 * 60 * 1000,
+    });
+    res.json({
+      _id: findAdmin._id,
+      primeironome: findAdmin.primeironome,
+      ultimonome: findAdmin.ultimonome,
+      email: findAdmin.email,
+      telefone: findAdmin.telefone,
+      token: generateToken(findAdmin._id),
+    });
+  } else {
     throw new Error("Credenciais inválidas");
   }
-  if (!(await findAdmin.isPasswordMatched(senha))) {
-    throw new Error("Credenciais inválidas");
-  }
-  const refreshToken = await generateRefreshToken(findAdmin._id);
-  const updateuser = await User.findByIdAndUpdate(
-    findAdmin._id,
-    {
-      refreshToken: refreshToken,
-    },
-    { new: true }
-  );
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    maxAge: 72 * 60 * 60 * 1000,
-  });
-  res.json({
-    _id: findAdmin._id,
-    primeironome: findAdmin.primeironome,
-    ultimonome: findAdmin.ultimonome,
-    email: findAdmin.email,
-    telefone: findAdmin.telefone,
-    token: generateToken(findAdmin._id),
-  });
 });
 
 // handle refresh token
@@ -150,7 +147,6 @@ const logout = asyncHandler(async (req, res) => {
 });
 
 // Update a user
-
 const updatedUser = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
@@ -174,12 +170,10 @@ const updatedUser = asyncHandler(async (req, res) => {
   }
 });
 
-// save user Address
-
+// salvar endereço do usuário
 const salvaEndereco = asyncHandler(async (req, res, next) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
-
   try {
     const updatedUser = await User.findByIdAndUpdate(
       _id,
@@ -197,10 +191,9 @@ const salvaEndereco = asyncHandler(async (req, res, next) => {
 });
 
 // Get all users
-
 const getallUsers = asyncHandler(async (req, res) => {
   try {
-    const getUsers = await User.find();
+    const getUsers = await User.find().populate("wishlist");
     res.json(getUsers);
   } catch (error) {
     throw new Error(error);
@@ -208,7 +201,6 @@ const getallUsers = asyncHandler(async (req, res) => {
 });
 
 // Get a single user
-
 const getaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongoDbId(id);
@@ -224,11 +216,9 @@ const getaUser = asyncHandler(async (req, res) => {
 });
 
 // Get a single user
-
 const deleteaUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongoDbId(id);
-
   try {
     const deleteaUser = await User.findByIdAndDelete(id);
     res.json({
@@ -242,7 +232,6 @@ const deleteaUser = asyncHandler(async (req, res) => {
 const blockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongoDbId(id);
-
   try {
     const blockusr = await User.findByIdAndUpdate(
       id,
@@ -262,7 +251,6 @@ const blockUser = asyncHandler(async (req, res) => {
 const unblockUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongoDbId(id);
-
   try {
     const unblock = await User.findByIdAndUpdate(
       id,
@@ -302,7 +290,9 @@ const forgotSenhaToken = asyncHandler(async (req, res) => {
   try {
     const token = await user.createPasswordResetToken();
     await user.save();
+    console.log(token);
     const resetURL = `Olá, siga este link para redefinir sua senha. Este link é válido até 10 minutos a partir de agora. <a href='http://localhost:5000/api/user/reset-senha/${token}'>Click Here</>`;
+
     const data = {
       to: email,
       text: "Ei usuário",
@@ -332,10 +322,10 @@ const resetSenha = asyncHandler(async (req, res) => {
   res.json(user);
 });
 
-const getListaDesejo = asyncHandler(async (req, res) => {
+const getWishlist = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   try {
-    const findUser = await User.findById(_id).populate("listadedesejos");
+    const findUser = await User.findById(_id).populate("wishlist");
     res.json(findUser);
   } catch (error) {
     throw new Error(error);
@@ -352,7 +342,7 @@ const userCarrinho = asyncHandler(async (req, res) => {
       produtoId,
       quantidade,
       valorBS,
-      orderby: _id, // Adicionando o valor de _id ao campo orderby
+      // orderby: _id, // Adicionando o valor de _id ao campo orderby
     }).save();
     res.json(newCarrinho);
   } catch (error) {
@@ -373,32 +363,15 @@ const getUserCarrinho = asyncHandler(async (req, res) => {
 
 const removeProductFromCart = asyncHandler(async (req, res) => {
   const { _id } = req.user;
-  const { carrinhoItemId } = req.params;
-  console.log(carrinhoItemId);
+  const { cartItemId } = req.params;
+  console.log(cartItemId);
   validateMongoDbId(_id);
   try {
     const deleteProductFromCart = await Carrinho.deleteOne({
       userId: _id,
-      _id: carrinhoItemId,
+      _id: cartItemId,
     });
     res.json(deleteProductFromCart);
-  } catch (error) {
-    throw new Error(error);
-  }
-});
-
-const updateProductQuantityFromCart = asyncHandler(async (req, res) => {
-  const { _id } = req.user;
-  const { carrinhoItemId, newQuantity } = req.params;
-  validateMongoDbId(_id);
-  try {
-    const carrinhoItem = await Carrinho.findOne({
-      userId: _id,
-      _id: carrinhoItemId,
-    });
-    carrinhoItem.quantidade = newQuantity;
-    carrinhoItem.save();
-    res.json(carrinhoItem);
   } catch (error) {
     throw new Error(error);
   }
@@ -408,9 +381,27 @@ const emptyCarrinho = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDbId(_id);
   try {
-    const user = await User.findOne({ _id });
-    const cart = await Carrinho.findOneAndRemove({ userId: user._id });
-    res.json(cart);
+    const deleteCart = await Carrinho.deleteMany({
+      userId: _id,
+    });
+    res.json(deleteCart);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const updateProductQuantityFromCart = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  const { cartItemId, newQuantidade } = req.params;
+  validateMongoDbId(_id);
+  try {
+    const cartItem = await Carrinho.findOne({
+      userId: _id,
+      _id: cartItemId,
+    });
+    cartItem.quantidade = newQuantidade;
+    cartItem.save();
+    res.json(cartItem);
   } catch (error) {
     throw new Error(error);
   }
@@ -440,135 +431,176 @@ const aplicaCupom = asyncHandler(async (req, res) => {
   res.json(totalDpsDesconto);
 });
 
-const createOrder = asyncHandler(async (req, res) => {
-  const { _id } = req.user;
-  validateMongoDbId(_id);
-
-  // 1. Encontrar os itens no carrinho do usuário
-  const carrinhoItens = await Carrinho.find({ userId: _id }).populate(
-    "produtoId"
-  );
-
-  // 2. Verificar se o carrinho não está vazio
-  if (carrinhoItens.length === 0) {
-    throw new Error(
-      "Carrinho vazio. Não é possível criar uma ordem de pagamento."
-    );
-  }
-
-  // 3. Calcular o valor total e o subtotal de cada item da ordem
-  const produtosComSubtotal = carrinhoItens.map((item) => ({
-    produto: item.produtoId,
-    contagem: item.quantidade,
-    subtotal: item.valorBS * item.quantidade,
-  }));
-
-  const ordemTotal = produtosComSubtotal.reduce(
-    (total, item) => total + item.subtotal,
-    0
-  );
-
-  // 4. Criar a ordem de pagamento
-  const novaOrdem = await Pedido.create({
-    produtos: produtosComSubtotal,
-    pedidoStatus: "Não Processado", // Defina o status inicial da ordem conforme necessário
-    orderby: _id,
-  });
-
-  // 5. Limpar o carrinho do usuário
-  await Carrinho.deleteMany({ userId: _id });
-
-  res.json({
-    message: "Ordem de pagamento criada com sucesso",
-    ordem: {
-      produtos: produtosComSubtotal,
-      pedidoStatus: novaOrdem.pedidoStatus,
-      orderby: novaOrdem.orderby,
-      _id: novaOrdem._id,
-      createdAt: novaOrdem.createdAt,
-      updatedAt: novaOrdem.updatedAt,
-      __v: novaOrdem.__v,
-      total: ordemTotal, // Adicionando o valor total à resposta
-    },
-  });
-});
-
-const getPedidos = asyncHandler(async (req, res) => {
-  const { _id } = req.user;
-  validateMongoDbId(_id);
-
-  try {
-    const userpedidos = await Pedido.find({ orderby: _id }).populate("orderby");
-    res.json(userpedidos);
-  } catch (error) {
-    throw new Error(error);
-  }
-});
-
-const getTodosPedidos = asyncHandler(async (req, res) => {
-  try {
-    const todosuserpedidos = await Pedido.find()
-      .populate("produtos.produto")
-      .populate("orderby")
-      .exec();
-    res.json(todosuserpedidos);
-  } catch (error) {
-    throw new Error(error);
-  }
-});
-
-const getOrderByUserId = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  validateMongoDbId(id);
-  try {
-    const userpedidos = await Pedido.findOne({ orderby: id })
-      .populate("produtos.produto")
-      .populate("orderby")
-      .exec();
-    res.json(userpedidos);
-  } catch (error) {
-    throw new Error(error);
-  }
-});
-
-const updateStatusPedidos = asyncHandler(async (req, res) => {
-  const { status } = req.body;
-  const { id } = req.params;
-  validateMongoDbId(id);
-  try {
-    const atualizaStatusPedido = await Pedido.findByIdAndUpdate(
-      id,
-      {
-        pedidoStatus: status,
-        acompPagemento: {
-          status: status,
-        },
-      },
-      { new: true }
-    );
-    res.json(atualizaStatusPedido);
-  } catch (error) {
-    throw new Error(error);
-  }
-});
-
-const getMyOrders = asyncHandler(async (req, res) => {
+const createPedido = asyncHandler(async (req, res) => {
+  const {
+    envioInfo,
+    pedidoItems,
+    valorTotal,
+    valorTotalAposDesconto,
+    pagamentoInfo,
+  } = req.body;
   const { _id } = req.user;
   try {
-    const orders = await Pedido.find({ user: _id })
+    const pedido = await Pedido.create({
+      envioInfo,
+      pedidoItems,
+      valorTotal,
+      valorTotalAposDesconto,
+      pagamentoInfo,
+      user: _id,
+    });
+    res.json({ pedido, success: true });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getMyPedidos = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  try {
+    const pedidos = await Pedido.find({ user: _id })
       .populate("user")
-      .populate("orderItems.produto");
+      .populate("pedidoItems.produto");
     res.json({
-      orders,
+      pedidos,
     });
   } catch (error) {
     throw new Error(error);
   }
 });
 
+const getAllPedidos = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  try {
+    const pedidos = await Pedido.find().populate("user");
+    // .populate("orderby")
+    // .exec();
+    res.json({
+      pedidos,
+    });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getsinglePedido = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  try {
+    const pedidos = await Pedido.findOne({ _id: id })
+      .populate("user")
+      .populate("pedidoItems.produto");
+    res.json({
+      pedidos,
+    });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const updatePedido = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  try {
+    const pedidos = await Pedido.findById(id);
+    pedidos.pedidoStatus = req.body.status;
+    await pedidos.save();
+    res.json({
+      pedidos,
+    });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getMonthWisePedidoIncome = asyncHandler(async (req, res) => {
+  let nomeMeses = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ];
+  let d = new Date();
+  let fimData = "";
+  d.setDate(1);
+  for (let index = 0; index < 11; index++) {
+    d.setMonth(d.getMonth() - 1); // vai para o proximo mes
+    fimData = nomeMeses[d.getMonth()] + " " + d.getFullYear();
+  }
+  const data = await Pedido.aggregate([
+    {
+      $match: {
+        createdAt: {
+          $lte: new Date(),
+          $gte: new Date(fimData),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          mes: "$month",
+        },
+        quantia: { $sum: "$valorTotalAposDesconto" },
+        contar: { $sum: 1 },
+      },
+    },
+  ]);
+  res.json(data);
+});
+
+const getYearlyTotalPedido = asyncHandler(async (req, res) => {
+  let nomeMeses = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ];
+  let d = new Date();
+  let fimData = "";
+  d.setDate(1);
+  for (let index = 0; index < 11; index++) {
+    d.setMonth(d.getMonth() -1);
+    fimData = nomeMeses[d.getMonth()] + " " + d.getFullYear();
+  }
+  const data = await Pedido.aggregate([
+    {
+      $match: {
+        createdAt: {
+          $lte: new Date(),
+          $gte: new Date(fimData),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        quantia: { $sum: 1 },
+        quantia: { $sum: "$valorTotalAposDesconto" },
+        contar: { $sum: 1 },
+      },
+    },
+  ]);
+  res.json(data);
+});
+
 module.exports = {
   createUser,
-  loginUserController,
+  loginUserCtrl,
   getallUsers,
   getaUser,
   deleteaUser,
@@ -581,18 +613,20 @@ module.exports = {
   forgotSenhaToken,
   resetSenha,
   loginAdmin,
-  getListaDesejo,
+  getWishlist,
   salvaEndereco,
   userCarrinho,
   getUserCarrinho,
   emptyCarrinho,
   aplicaCupom,
-  createOrder,
-  getPedidos,
-  updateStatusPedidos,
-  getTodosPedidos,
-  getOrderByUserId,
+  createPedido,
+  getMyPedidos,
+  getAllPedidos,
+  getsinglePedido,
+  updatePedido,
+  getMonthWisePedidoIncome,
+  getYearlyTotalPedido,
+
   removeProductFromCart,
   updateProductQuantityFromCart,
-  getMyOrders,
 };

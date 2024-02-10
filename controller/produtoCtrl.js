@@ -17,40 +17,28 @@ const createProduto = asyncHandler(async (req, res) => {
 });
 
 // Atualiza o produto
-const updatedProduto = asyncHandler(async (req, res, next) => {
+const updatedProduto = asyncHandler(async (req, res) => {
+  const { id } = req.params; // Corrigido para obter o ID da rota corretamente
+  validateMongoDbId(id); // Valide o ID aqui
   try {
-    const id = req.params.id; // Corrigido para obter o ID da rota corretamente
-    validateMongoDbId(id); // Valide o ID aqui
-
     if (req.body.item) {
       req.body.slug = slugify(req.body.item);
     }
-
-    const updateProduto = await Produto.findOneAndUpdate(
-      { _id: id },
-      req.body,
-      {
-        new: true,
-      }
-    );
-
+    const updateProduto = await Produto.findOneAndUpdate(id, req.body, {
+      new: true,
+    });
     res.json(updateProduto);
   } catch (error) {
-    next(error); // Passar o erro ao próximo middleware de erro
+    throw new Error(error); // Passar o erro ao próximo middleware de erro
   }
 });
 
 // Deleta um produto
 const deleteProduto = asyncHandler(async (req, res) => {
-  const id = req.params.id; // Obtenha o ID do parâmetro
+  const { id } = req.params.id; // Obtenha o ID do parâmetro
   validateMongoDbId(id);
-
   try {
-    const deleteProduto = await Produto.findOneAndDelete({ _id: id });
-    if (!deleteProduto) {
-      return res.status(404).json({ message: "Produto não encontrado" });
-    }
-
+    const deleteProduto = await Produto.findOneAndDelete(id);
     res.json(deleteProduto);
   } catch (error) {
     throw new Error(error);
@@ -115,31 +103,39 @@ const getAllProduto = asyncHandler(async (req, res) => {
 });
 
 // Método de adicionar produtos na lista de desejo
-/* const addListadeDesejos = asyncHandler(async (req, res) => {
+const addToWishlist = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   const { prodId } = req.body;
   try {
     const user = await User.findById(_id);
-
-    if (!user) {
-      return res.status(404).json({ message: "Usuário não encontrado" });
-    }
-
-    const alreadyadded = user.listadedesejos.includes(prodId);
-
+    const alreadyadded = user.wishlist.find((id) => id.toString() === prodId);
     if (alreadyadded) {
-      user.listadedesejos = user.listadedesejos.filter((id) => id !== prodId);
+      let user = await User.findByIdAndUpdate(
+        _id,
+        {
+          $pull: { wishlist: prodId },
+        },
+        {
+          new: true,
+        }
+      );
+      res.json(user);
     } else {
-      user.listadedesejos.push(prodId);
+      let user = await User.findByIdAndUpdate(
+        _id,
+        {
+          $push: { wishlist: prodId },
+        },
+        {
+          new: true,
+        }
+      );
+      res.json(user);
     }
-
-    const updatedUser = await user.save();
-    res.json(updatedUser);
   } catch (error) {
-    next(error);
+    throw new Error(error);
   }
-}); */
-
+});
 
 const rating = asyncHandler(async (req, res) => {
   const { _id } = req.user;
@@ -204,6 +200,6 @@ module.exports = {
   getAllProduto,
   updatedProduto,
   deleteProduto,
-  // addListadeDesejos,
+  addToWishlist,
   rating,
 };
