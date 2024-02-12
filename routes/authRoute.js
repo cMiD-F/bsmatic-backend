@@ -1,9 +1,8 @@
 const express = require("express");
-const cors = require("cors");
 const {
   createUser,
   loginUserCtrl,
-  getallUsers,
+  getallUser,
   getaUser,
   deleteaUser,
   updatedUser,
@@ -11,68 +10,58 @@ const {
   unblockUser,
   handleRefreshToken,
   logout,
-  updateSenha,
-  forgotSenhaToken,
-  resetSenha,
+  updatePassword,
+  forgotPasswordToken,
+  resetPassword,
   loginAdmin,
   getWishlist,
-  salvaEndereco,
-  userCarrinho,
-  getUserCarrinho,
-  emptyCarrinho,
-  aplicaCupom,
-  createPedido,
-  getMyPedidos,
-  getAllPedidos,
-  getsinglePedido,
-  updatePedido,
-  getMonthWisePedidoIncome,
-  getYearlyTotalPedido,
+  saveAddress,
+  userCart,
+  getUserCart,
+
+  createOrder,
 
   removeProductFromCart,
   updateProductQuantityFromCart,
+  getMyOrders,
+  emptyCart,
+  getMonthWiseOrderIncome,
+  getMonthWiseOrderCount,
+  getYearlyTotalOrder,
+  getAllOrders,
+  getsingleOrder,
+  updateOrder,
 } = require("../controller/userCtrl");
-
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const { checkout, paymentVerification } = require("../controller/paymentCtrl");
+
 const router = express.Router();
+router.post("/register", createUser);
+router.post("/forgot-password-token", forgotPasswordToken);
 
-// Configuração de CORS específica para essas rotas
-const corsOptions = {
-  origin: "http://localhost:3000",
-  credentials: true,
-};
+router.put("/reset-password/:token", resetPassword);
 
-router.use(express.json());
-router.use(express.urlencoded({ extended: true }));
-router.use(cors(corsOptions));
-
-router.post("/registro", createUser);
-router.post("/forgot-senha-token", forgotSenhaToken);
-
-router.put("/reset-senha/:token", resetSenha);
-
-router.put("/senha", authMiddleware, updateSenha);
+router.put("/password", authMiddleware, updatePassword);
 router.post("/login", loginUserCtrl);
-router.post("/login-admin", loginAdmin);
-router.post("/carrinho", authMiddleware, userCarrinho);
-router.post("/pedido/checkout", authMiddleware, checkout);
-router.post("/pedido/paymentVerification", authMiddleware, paymentVerification);
+router.post("/admin-login", loginAdmin);
+router.post("/cart", authMiddleware, userCart);
+router.post("/order/checkout", authMiddleware, checkout);
+router.post("/order/paymentVerification", authMiddleware, paymentVerification);
 
-router.post("/carrinho/cria-pedido", authMiddleware, createPedido);
-router.get("/todos-usuarios", getallUsers);
-router.get("/getmeuspedidos", authMiddleware, getMyPedidos);
-router.get("/gettodospedidos", authMiddleware, isAdmin, getAllPedidos);
-router.get("/getPedido/:id", authMiddleware, isAdmin, getsinglePedido);
-router.put("/updatePedido/:id", authMiddleware, isAdmin, updatePedido);
+router.post("/cart/create-order", authMiddleware, createOrder);
+router.get("/all-users", getallUser);
+router.get("/getmyorders", authMiddleware, getMyOrders);
+router.get("/getallorders", authMiddleware, isAdmin, getAllOrders);
+router.get("/getaOrder/:id", authMiddleware, isAdmin, getsingleOrder);
+router.put("/updateOrder/:id", authMiddleware, isAdmin, updateOrder);
 
-router.get("/getMonthWisePedidosIncome", authMiddleware, getMonthWisePedidoIncome);
-router.get("/getyearlypedidos", authMiddleware, getYearlyTotalPedido);
+router.get("/getMonthWiseOrderIncome", authMiddleware, getMonthWiseOrderIncome);
+router.get("/getyearlyorders", authMiddleware, getYearlyTotalOrder);
 
 router.get("/refresh", handleRefreshToken);
 router.get("/logout", logout);
 router.get("/wishlist", authMiddleware, getWishlist);
-router.get("/carrinho", authMiddleware, getUserCarrinho);
+router.get("/cart", authMiddleware, getUserCart);
 
 router.get("/:id", authMiddleware, isAdmin, getaUser);
 
@@ -82,17 +71,17 @@ router.delete(
   removeProductFromCart
 );
 router.delete(
-  "/update-product-cart/:cartItemId/:newQuantidade",
+  "/update-product-cart/:cartItemId/:newQuantity",
   authMiddleware,
   updateProductQuantityFromCart
 );
 
-router.delete("/empty-cart", authMiddleware, emptyCarrinho);
+router.delete("/empty-cart", authMiddleware, emptyCart);
 
 router.delete("/:id", deleteaUser);
 
 router.put("/edit-user", authMiddleware, updatedUser);
-router.put("/salvar-endereco", authMiddleware, salvaEndereco);
+router.put("/save-address", authMiddleware, saveAddress);
 router.put("/block-user/:id", authMiddleware, isAdmin, blockUser);
 router.put("/unblock-user/:id", authMiddleware, isAdmin, unblockUser);
 

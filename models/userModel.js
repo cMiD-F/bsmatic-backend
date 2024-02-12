@@ -4,11 +4,11 @@ const crypto = require("crypto");
 // Declare the Schema of the Mongo model
 var userSchema = new mongoose.Schema(
   {
-    primeironome: {
+    firstname: {
       type: String,
       required: true,
     },
-    ultimonome: {
+    lastname: {
       type: String,
       required: true,
     },
@@ -17,28 +17,31 @@ var userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    telefone: {
+    mobile: {
       type: String,
       required: true,
       unique: true,
     },
-    senha: {
+    password: {
       type: String,
       required: true,
     },
-    endereco: {
+    role: {
       type: String,
+      default: "user",
     },
     isBlocked: {
       type: Boolean,
       default: false,
     },
-    carrinho: {
+    cart: {
       type: Array,
       default: [],
     },
-    
-    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Produto" }],
+    address: {
+      type: String,
+    },
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
     refreshToken: {
       type: String,
     },
@@ -52,15 +55,15 @@ var userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("senha")) {
+  if (!this.isModified("password")) {
     next();
   }
   const salt = await bcrypt.genSaltSync(10);
-  this.senha = await bcrypt.hash(this.senha, salt);
+  this.password = await bcrypt.hash(this.password, salt);
   next();
 });
-userSchema.methods.isPasswordMatched = async function (senhadigitada) {
-  return await bcrypt.compare(senhadigitada, this.senha);
+userSchema.methods.isPasswordMatched = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
 };
 userSchema.methods.createPasswordResetToken = async function () {
   const resettoken = crypto.randomBytes(32).toString("hex");

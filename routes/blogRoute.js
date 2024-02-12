@@ -22,8 +22,8 @@ router.put(
   blogImgResize,
   uploadImages
 );
-router.put("/curtidas", authMiddleware, liketheBlog);
-router.put("/ncurtidas", authMiddleware, disliketheBlog);
+router.put("/likes", authMiddleware, liketheBlog);
+router.put("/dislikes", authMiddleware, disliketheBlog);
 
 router.put("/:id", authMiddleware, isAdmin, updateBlog);
 
